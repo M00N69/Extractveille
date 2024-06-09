@@ -13,13 +13,14 @@ def extraire_articles(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     articles = []
-    for article in soup.find_all('tr'):
+    for article in soup.find_all('div', id='content-core'):
         try:
-            titre = article.find('a').text.strip()
-            lien = article.find('a')['href']
-            resume = article.find('td', class_='resume').text.strip()
-            date_publication = article.find('td', class_='date').text.strip()
-            rubrique = article.find('td', class_='rubrique').text.strip()
+            titre = article.find('h1', class_='documentFirstHeading').text.strip()
+            lien = article.find('a', href=True)['href']
+            resume = article.find('p', style='text-indent:0; line-height:110%; margin-top:1mm; margin-bottom:1mm; margin-left:0;').text.strip()
+            date_publication = article.find('p', class_='western').text.strip()
+            rubrique = article.find('p', style='text-indent:0; line-height:110%; margin-top:1mm; margin-bottom:1mm; margin-left:0;').find_previous('p').text.strip()
+
             articles.append({
                 'titre': titre,
                 'resume': resume,
