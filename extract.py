@@ -108,7 +108,7 @@ if st.button("Editer"):
                 <style>
                 table {
                     border-collapse: collapse;
-                    width: 100%;
+                    width: 150%;
                     border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
@@ -145,7 +145,7 @@ if st.button("Editer"):
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
             st.markdown(
                 f"""
-                <div style="width: 100%; overflow-x: auto;">
+                <div style="width: 150%; overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
@@ -207,7 +207,7 @@ if st.button("Editer"):
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
             st.markdown(
                 f"""
-                <div style="width: 100%; overflow-x: auto;">
+                <div style="width: 150%; overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
