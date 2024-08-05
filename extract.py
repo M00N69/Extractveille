@@ -109,7 +109,8 @@ if st.button("Editer"):
                 table {
                     border-collapse: collapse;
                     width: 100%;
-                    margin: 0 auto; /* Centrer le tableau */
+                    margin-left: 0; /* Marge gauche nulle */
+                    margin-right: auto; /* Marge droite automatique */
                     border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
@@ -172,7 +173,8 @@ if st.button("Editer"):
                 table {
                     border-collapse: collapse;
                     width: 100%;
-                    margin: 0 auto; /* Centrer le tableau */
+                    margin-left: 0; /* Marge gauche nulle */
+                    margin-right: auto; /* Marge droite automatique */
                     border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
