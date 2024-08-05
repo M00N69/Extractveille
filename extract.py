@@ -1,8 +1,10 @@
 import streamlit as st
-import requests
 from bs4 import BeautifulSoup
+import requests
 import nltk
-from nltk.corpus import stopwords
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
