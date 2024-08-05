@@ -1,34 +1,40 @@
 import streamlit as st
-import requests
 from bs4 import BeautifulSoup
+import requests
 
 def extraire_texte_et_liens(url):
     response = requests.get(url)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    texte = ""
-    liens = []
+    table = soup.find('table')
+    if table:
+        rows = table.find_all('tr')
+        data = []
+        for row in rows:
+            cols = row.find_all('td')
+            if len(cols) >= 7:
+                row_data = [col.text.strip() for col in cols]
+                for i, col in enumerate(cols):
+                    if col.find('a'):
+                        row_data[i] = f"[{col.text.strip()}]({col.find('a')['href']})"  # Ajoute le lien formaté
+                data.append(row_data)
 
-    for element in soup.find_all(True):
-        if element.name == 'a':
-            liens.append((element.text.strip(), element['href']))  # Ajoute le texte et le lien
-        else:
-            texte += element.text.strip()
-
-    return texte, liens
+        return data
+    else:
+        return None
 
 # Page Streamlit
 st.title("IA-Reader")
-st.write("Extraction du texte et des liens du bulletin Alexia")
+st.write("Extraction du tableau et des liens du bulletin Alexia")
 
 if st.button("Extraire"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
-    texte, liens = extraire_texte_et_liens(url)
+    data = extraire_texte_et_liens(url)
 
-    st.subheader("Texte du bulletin:")
-    st.write(texte)
-
-    st.subheader("Liens extraits:")
-    for texte_lien, lien in liens:
-        st.write(f"[{texte_lien}]({lien})")
+    if data:
+        st.subheader("Tableau extrait:")
+        for row in data:
+            st.write(" | ".join(row))  # Affiche chaque ligne avec des séparateurs
+    else:
+        st.error("Impossible d'extraire le tableau du bulletin.")
