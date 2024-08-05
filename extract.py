@@ -5,13 +5,11 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
-import openai
+import google.generativeai as genai
 
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
-
-openai.api_key = "YOUR_OPENAI_API_KEY"  # Remplacez par votre clé API OpenAI
 
 def extraire_texte_et_liens(url):
     response = requests.get(url)
@@ -97,18 +95,46 @@ def calculer_pertinence(texte_article, mots_cles):
 
     return pertinence
 
-# Fonction pour générer des résumés avec OpenAI
-def generer_resume(texte):
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=f"Résume cet article: {texte}",
-        temperature=0.7,
-        max_tokens=100,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0
+# Fonction pour générer des résumés avec Gemini
+def generer_resume(texte, lien_resume):
+    # Obtenir la clé API Gemini à partir des secrets Streamlit
+    gemini_api_key = st.secrets["GEMINI_API_KEY"]
+
+    # Configurer l'API Gemini
+    genai.configure(api_key=gemini_api_key)
+
+    # Définir les paramètres de génération
+    generation_config = {
+        "temperature": 2,
+        "top_p": 0.4,
+        "top_k": 32,
+        "max_output_tokens": 8192,
+    }
+
+    # Définir les paramètres de sécurité
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+    ]
+
+    # Définir les instructions du système
+    system_instruction = f"""
+    Utilisez le texte du lien "Résumé" disponible dans le tableau pour générer un résumé concis et pertinent de l'article.
+    Le lien "Résumé" est : {lien_resume} 
+    """
+
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-pro-latest",
+        generation_config=generation_config,
+        system_instruction=system_instruction,
+        safety_settings=safety_settings
     )
-    return response.choices[0].text
+
+    # Générer le résumé en utilisant Gemini
+    response = model.generate_text(text=texte)
+    return response.text
 
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
@@ -159,12 +185,10 @@ if st.button("Editer"):
             unsafe_allow_html=True
         )
 
-        # Ajouter ces lignes au début de la section st.markdown pour le tableau
-        st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
-
-        # Créer le tableau HTML avec les données extraites
+        # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
         st.markdown(
             f"""
+            <div style="overflow-x: auto;">
             <table>
                 <thead>
                     <tr>
@@ -175,11 +199,10 @@ if st.button("Editer"):
                     {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
                 </tbody>
             </table>
+            </div>
             """,
             unsafe_allow_html=True
         )
-        # Ajouter ces lignes à la fin de la section st.markdown pour le tableau
-        st.markdown("</div>", unsafe_allow_html=True)
 
         # Filtrer le tableau par mots-clés, date et rubrique
         filtered_data = []
@@ -260,11 +283,12 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
-            # Générer des résumés avec OpenAI
+            # Générer des résumés avec Gemini
             if st.checkbox("Afficher les résumés"):
                 st.subheader("Résumés des articles:")
                 for row in filtered_data:
-                    resume = generer_resume(f"{row[4]} {row[5]}")
+                    lien_resume = row[1].split("](")[1].split(")")[0]  # Extraire le lien "Résumé"
+                    resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
                     st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
                     st.write("---")
 
