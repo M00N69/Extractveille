@@ -2,13 +2,30 @@ import streamlit as st
 from bs4 import BeautifulSoup
 import requests
 import nltk
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Fonction pour extraire le HTML complet
+def extraire_html_complet(url):
+    options = Options()
+    options.add_argument('--headless=new')  # Exécuter le navigateur en mode headless 
+    driver = webdriver.Chrome(options=options)  # Utilisez le pilote Chrome
+    driver.get(url)
+
+    # Attendre que le contenu soit chargé 
+    driver.implicitly_wait(10) 
+
+    html_complet = driver.page_source
+    driver.quit()
+
+    soup = BeautifulSoup(html_complet, 'html.parser')
+    return soup
+
 # Fonction pour extraire les articles du site web
-def extraire_articles(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
+def extraire_articles(html_complet):
+    soup = BeautifulSoup(html_complet, 'html.parser')
     articles = []
     for article in soup.find_all('tr'):
         try:
@@ -30,7 +47,7 @@ def extraire_articles(url):
                 publication_tds = fiche_td.find_all('td')
                 publication = publication_tds[2].text.strip() if len(publication_tds) > 2 else None
                 
-                # Afficher des messages de débogage
+                # Afficher des messages de débogage (à supprimer une fois que le code fonctionne)
                 st.write(f"Lien: {lien}")
                 st.write(f"Titre: {titre}")
                 st.write(f"Résumé: {resume}")
@@ -72,7 +89,11 @@ st.write("Recherche d'articles pertinents")
 # mots_cles = st.text_input("Entrez vos mots-clés (séparés par des virgules):")
 
 if st.button("Extraire les articles"):
-    articles = extraire_articles("https://www.alexia-iaa.fr/ac/AC000/somAC001.htm")
+    # Obtenir le code HTML complet (utilisez Selenium ou un autre outil)
+    html_complet = extraire_html_complet("https://www.alexia-iaa.fr/ac/AC000/somAC001.htm")
+
+    # Extraire les articles en utilisant le HTML complet
+    articles = extraire_articles(html_complet)
 
     st.subheader("Articles extraits:")
     for article in articles:
