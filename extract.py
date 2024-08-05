@@ -12,8 +12,15 @@ def extraire_articles(url):
     articles = []
     for article in soup.find_all('tr'):
         try:
-            titre = article.find('a').text.strip()
-            lien = article.find('a')['href']
+            # Trouver le lien dans le <td> avant le <td> avec le titre
+            lien_td = article.find('td', class_='lien')
+            if lien_td:
+                lien = lien_td.find('a')['href']
+                titre = lien_td.find('a').text.strip()
+            else:
+                lien = None
+                titre = None
+            
             resume = article.find('td', class_='resume').text.strip()
             date_publication = article.find('td', class_='date').text.strip()
             rubrique = article.find('td', class_='rubrique').text.strip()
@@ -53,16 +60,17 @@ if st.button("Rechercher"):
     articles = extraire_articles("https://www.alexia-iaa.fr/ac/AC000/somAC001.htm")
     resultats = []
     for article in articles:
-        texte_traite = pre_traiter_texte(article['resume'])
-        pertinence = calculer_pertinence(texte_traite, mots_cles.lower())
-        resultats.append({
-            'titre': article['titre'],
-            'resume': article['resume'],
-            'date_publication': article['date_publication'],
-            'rubrique': article['rubrique'],
-            'lien': article['lien'],
-            'pertinence': pertinence
-        })
+        if article['lien']: # Vérifier si le lien est présent
+            texte_traite = pre_traiter_texte(article['resume'])
+            pertinence = calculer_pertinence(texte_traite, mots_cles.lower())
+            resultats.append({
+                'titre': article['titre'],
+                'resume': article['resume'],
+                'date_publication': article['date_publication'],
+                'rubrique': article['rubrique'],
+                'lien': article['lien'],
+                'pertinence': pertinence
+            })
 
     resultats.sort(key=lambda x: x['pertinence'], reverse=True)
 
