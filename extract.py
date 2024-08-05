@@ -106,9 +106,15 @@ if st.button("Editer"):
             st.markdown(
                 """
                 <style>
+                .table-container {
+                    display: flex;
+                    justify-content: center;
+                    width: 100%;
+                }
                 table {
                     border-collapse: collapse;
-                    width: 100%;
+                    width: 80%;
+                    max-width: 1200px;
                     border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
@@ -145,7 +151,7 @@ if st.button("Editer"):
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
             st.markdown(
                 f"""
-                <div style="overflow-x: auto;">
+                <div class="table-container">
                 <table>
                     <thead>
                         <tr>
@@ -168,9 +174,15 @@ if st.button("Editer"):
             st.markdown(
                 """
                 <style>
+                .table-container {
+                    display: flex;
+                    justify-content: center;
+                    width: 100%;
+                }
                 table {
                     border-collapse: collapse;
-                    width: 100%;
+                    width: 80%;
+                    max-width: 1200px;
                     border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
@@ -207,7 +219,7 @@ if st.button("Editer"):
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
             st.markdown(
                 f"""
-                <div style="overflow-x: auto;">
+                <div class="table-container">
                 <table>
                     <thead>
                         <tr>
@@ -225,3 +237,4 @@ if st.button("Editer"):
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
+
