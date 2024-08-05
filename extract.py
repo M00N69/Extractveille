@@ -11,7 +11,26 @@ nltk.download('punkt')
 nltk.download('wordnet')
 
 def extraire_texte_et_liens(url):
-    # ... (Code existant de la fonction)
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    table = soup.find('table')
+    if table:
+        rows = table.find_all('tr')
+        data = []
+        for row in rows:
+            cols = row.find_all('td')
+            if len(cols) >= 7:
+                row_data = [col.text.strip() for col in cols]
+                for i, col in enumerate(cols):
+                    if col.find('a'):
+                        row_data[i] = f"<a href='{col.find('a')['href']}'>{col.text.strip()}</a>"
+                data.append(row_data)
+
+        return data
+    else:
+        return None
 
 # URL du GIF
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTl6aXY3dXp3djdjYzVyNGMyYWpnN3g3bnZ0NXo1emJ4aDdmdmY3YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/a3IGFA4BKrE40/giphy.gif"
