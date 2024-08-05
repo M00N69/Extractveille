@@ -58,13 +58,6 @@ st.sidebar.title("Filtres")
 # Filtre par mots-clés
 mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
 
-# Filtre par date (à implémenter)
-# date_debut = st.sidebar.date_input("Date de début:")
-# date_fin = st.sidebar.date_input("Date de fin:")
-
-# Filtre par rubrique (à implémenter)
-# rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Rubrique 1", "Rubrique 2", "Rubrique 3"])
-
 # Fonction pour calculer la pertinence des articles
 def calculer_pertinence(texte_article, mots_cles):
     # Prétraitement du texte (suppression des stopwords et lemmatisation)
@@ -153,6 +146,34 @@ if st.button("Editer"):
 
         # Ajouter cette ligne à la fin de la section st.markdown pour le tableau
         st.markdown("</div>", unsafe_allow_html=True)
+
+        # Filtrer le tableau par mots-clés
+        if mots_cles:
+            filtered_data = []
+            for row in data[1:]:  # Ignorer l'en-tête
+                # Vérifier si les mots-clés sont présents dans l'article
+                if any(mot_cle in row[4].lower() for mot_cle in mots_cles.lower().split(",")):
+                    filtered_data.append(row)
+
+            st.subheader("Résultats filtrés:")
+
+            st.markdown(
+                f"""
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{'</th><th>'.join(data[0])}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in filtered_data)}
+                    </tbody>
+                </table>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.write("Aucun filtre appliqué.")
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
