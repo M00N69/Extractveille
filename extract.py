@@ -23,6 +23,21 @@ def extraire_texte_et_liens(url):
         return data
     else:
         return None
+# URL du GIF
+gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTV5dWI1M3dheG92aGI2NXRydXpuMDBqeHhvOWY3ZWhtOG1qNDM4diZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT9IgN8YKRhByRBzMI/giphy-downsized-large.gif"
+
+# Définir le CSS pour l'arrière-plan
+css_background = f"""
+<style>
+.stApp {{
+    background: url("{gif_url}") no-repeat center center fixed;
+    background-size: cover;
+}}
+</style>
+"""
+
+# Injecter le CSS dans l'application Streamlit
+st.markdown(css_background, unsafe_allow_html=True)
 
 # Page Streamlit
 st.title("VEILLE EN IAA")
