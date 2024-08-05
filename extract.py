@@ -10,10 +10,10 @@ def extraire_articles(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     articles = []
-    for article in soup.find_all('tr'):
+    for article in soup.find_all('tr'): # Correct: Trouver les lignes du tableau 
         try:
-            # Trouver le lien dans le <td> avant le <td> avec le titre
-            lien_td = article.find('td', class_='lien')
+            # Trouver le lien dans le <td> précédent le <td> avec le titre
+            lien_td = article.find_previous('td', class_='lien') 
             if lien_td:
                 lien = lien_td.find('a')['href']
                 titre = lien_td.find('a').text.strip()
@@ -21,9 +21,9 @@ def extraire_articles(url):
                 lien = None
                 titre = None
             
-            resume = article.find('td', class_='resume').text.strip()
-            date_publication = article.find('td', class_='date').text.strip()
-            rubrique = article.find('td', class_='rubrique').text.strip()
+            resume = article.find('td', class_='resume').text.strip() # Correct: Sélectionner le résumé
+            date_publication = article.find('td', class_='date').text.strip() # Correct: Sélectionner la date
+            rubrique = article.find('td', class_='rubrique').text.strip() # Correct: Sélectionner la rubrique
             
             articles.append({
                 'titre': titre,
