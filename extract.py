@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import nltk
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -62,21 +63,16 @@ mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virg
 def calculer_pertinence(texte_article, mots_cles):
     # Prétraitement du texte (suppression des stopwords et lemmatisation)
     stop_words = set(stopwords.words('french'))
+    lemmatizer = WordNetLemmatizer()
     tokens_article = nltk.word_tokenize(texte_article)
-    tokens_article = [token.lower() for token in tokens_article if token.isalpha() and token.lower() not in stop_words]
-    tokens_article = [nltk.stem.WordNetLemmatizer().lemmatize(token) for token in tokens_article]
+    tokens_article = [lemmatizer.lemmatize(token.lower()) for token in tokens_article if token.isalpha() and token.lower() not in stop_words]
 
     tokens_mots_cles = nltk.word_tokenize(mots_cles)
-    tokens_mots_cles = [token.lower() for token in tokens_mots_cles if token.isalpha() and token.lower() not in stop_words]
-    tokens_mots_cles = [nltk.stem.WordNetLemmatizer().lemmatize(token) for token in tokens_mots_cles]
+    tokens_mots_cles = [lemmatizer.lemmatize(token.lower()) for token in tokens_mots_cles if token.isalpha() and token.lower() not in stop_words]
 
-    # Convertir les tokens en chaînes de caractères
-    texte_article = " ".join(tokens_article) 
-    mots_cles = " ".join(tokens_mots_cles)
-
-    # Vectorisation TF-IDF
+    # Calculer la similarité cosinus basée sur TF-IDF
     vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([texte_article, mots_cles])
+    tfidf_matrix = vectorizer.fit_transform([" ".join(tokens_article), " ".join(tokens_mots_cles)])
     similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
 
     return similarity[0][0]
@@ -105,7 +101,7 @@ if st.button("Editer"):
                 table {
                     border-collapse: collapse;
                     width: 100%;
-                    border: 1px solid #ddd; 
+                    border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
 
@@ -171,7 +167,7 @@ if st.button("Editer"):
                 table {
                     border-collapse: collapse;
                     width: 100%;
-                    border: 1px solid #ddd; 
+                    border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
 
