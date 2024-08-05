@@ -3,8 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 import nltk
 from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -74,7 +72,7 @@ def calculer_pertinence(texte_article, mots_cles):
     mots_cles = " ".join(tokens_mots_cles)
 
     # Utiliser un ensemble de mots-clés pour une meilleure correspondance
-    mots_cles_set = set(tokens_mots_cles.split())
+    mots_cles_set = set(mots_cles.split(","))  # Corrigé : Splittez la chaîne de mots-clés
 
     # Vérifier la présence de chaque mot-clé dans l'article
     pertinence = 0
