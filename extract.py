@@ -12,31 +12,31 @@ def extraire_articles(url):
     articles = []
     for article in soup.find_all('tr'):
         try:
-            # Trouver le lien dans le <td> précédent le <td> avec le titre
-            lien_td = article.find('td', class_='lien')
-            if lien_td:
-                lien = lien_td.find('a')['href']
-                titre = lien_td.find('a').text.strip()
-            else:
-                lien = None
-                titre = None
+            fiche_td = article.find('td', class_='fiche')
+            if fiche_td:
+                lien_td = fiche_td.find('td', class_='lien')
+                if lien_td:
+                    lien = lien_td.find('a')['href']
+                    titre = lien_td.find('a').text.strip()
+                else:
+                    lien = None
+                    titre = None
 
-            resume = article.find('td', class_='resume').text.strip()
-            date_publication = article.find('td', class_='date').text.strip()
-            rubrique = article.find('td', class_='rubrique').text.strip()
+                resume = fiche_td.find('td', class_='resume').text.strip()
+                date_publication = fiche_td.find('td', class_='date').text.strip()
+                rubrique = fiche_td.find('td', class_='rubrique').text.strip()
 
-            # Ajouter des informations supplémentaires si disponibles
-            publication_td = article.find('td', class_='publication')
-            publication = publication_td.text.strip() if publication_td else None
-            
-            articles.append({
-                'titre': titre,
-                'resume': resume,
-                'date_publication': date_publication,
-                'rubrique': rubrique,
-                'lien': lien,
-                'publication': publication
-            })
+                publication_td = fiche_td.find('td', class_='publication')
+                publication = publication_td.text.strip() if publication_td else None
+                
+                articles.append({
+                    'titre': titre,
+                    'resume': resume,
+                    'date_publication': date_publication,
+                    'rubrique': rubrique,
+                    'lien': lien,
+                    'publication': publication
+                })
         except AttributeError:
             pass  # Ignore les lignes qui manquent d'informations
     return articles
