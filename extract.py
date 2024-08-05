@@ -26,9 +26,19 @@ def extraire_articles(url):
                 date_publication = fiche_td.find('td', class_='date').text.strip()
                 rubrique = fiche_td.find('td', class_='rubrique').text.strip()
 
-                publication_td = fiche_td.find('td', class_='publication')
-                publication = publication_td.text.strip() if publication_td else None
+                # Extraire la publication par position
+                publication_tds = fiche_td.find_all('td')
+                publication = publication_tds[2].text.strip() if len(publication_tds) > 2 else None
                 
+                # Afficher des messages de débogage
+                st.write(f"Lien: {lien}")
+                st.write(f"Titre: {titre}")
+                st.write(f"Résumé: {resume}")
+                st.write(f"Date de publication: {date_publication}")
+                st.write(f"Rubrique: {rubrique}")
+                st.write(f"Publication: {publication}")
+                st.write("---")
+
                 articles.append({
                     'titre': titre,
                     'resume': resume,
