@@ -1,6 +1,6 @@
 import streamlit as st
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 
 def extraire_texte_et_liens(url):
     response = requests.get(url)
@@ -17,7 +17,7 @@ def extraire_texte_et_liens(url):
                 row_data = [col.text.strip() for col in cols]
                 for i, col in enumerate(cols):
                     if col.find('a'):
-                        row_data[i] = f"[{col.text.strip()}]({col.find('a')['href']})"  # Ajoute le lien formaté
+                        row_data[i] = f"[{col.text.strip()}]({col.find('a')['href']})"
                 data.append(row_data)
 
         return data
@@ -34,7 +34,35 @@ if st.button("Extraire"):
 
     if data:
         st.subheader("Tableau extrait:")
-        for row in data:
-            st.write(" | ".join(row))  # Affiche chaque ligne avec des séparateurs
+        st.markdown(
+            """
+            <style>
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            th, td {
+                border: 1px solid #ddd;
+                text-align: left;
+                padding: 8px;
+            }
+
+            tr:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+
+            th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(f"{' | '.join(data[0])}", unsafe_allow_html=True)  # Affiche l'en-tête
+        for row in data[1:]:  # Affiche les lignes de données
+            st.markdown(f"{' | '.join(row)}", unsafe_allow_html=True)
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
