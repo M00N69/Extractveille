@@ -3,10 +3,15 @@ import requests
 from bs4 import BeautifulSoup
 import nltk
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import pandas as pd
+import openai
 
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
+
+openai.api_key = "YOUR_OPENAI_API_KEY"  # Remplacez par votre clé API OpenAI
 
 def extraire_texte_et_liens(url):
     response = requests.get(url)
@@ -56,6 +61,13 @@ st.sidebar.title("Filtres")
 # Filtre par mots-clés
 mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
 
+# Filtre par date
+date_debut = st.sidebar.date_input("Date de début:")
+date_fin = st.sidebar.date_input("Date de fin:")
+
+# Filtre par rubrique
+rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"])
+
 # Fonction pour calculer la pertinence des articles
 def calculer_pertinence(texte_article, mots_cles):
     # Prétraitement du texte (suppression des stopwords et lemmatisation)
@@ -72,7 +84,7 @@ def calculer_pertinence(texte_article, mots_cles):
     mots_cles = " ".join(tokens_mots_cles)
 
     # Utiliser un ensemble de mots-clés pour une meilleure correspondance
-    mots_cles_set = set(mots_cles.split(","))  # Corrigé : Splittez la chaîne de mots-clés
+    mots_cles_set = set(mots_cles.split(",")) 
 
     # Vérifier la présence de chaque mot-clé dans l'article
     pertinence = 0
@@ -85,36 +97,117 @@ def calculer_pertinence(texte_article, mots_cles):
 
     return pertinence
 
+# Fonction pour générer des résumés avec OpenAI
+def generer_resume(texte):
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"Résume cet article: {texte}",
+        temperature=0.7,
+        max_tokens=100,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
+    )
+    return response.choices[0].text
+
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
 
     if data:
-        if mots_cles:
-            filtered_data = []
-            for row in data[1:]:  # Ignorer l'en-tête
-                # Vérifier si les mots-clés sont présents dans l'article
-                texte_article = f"{row[4]} {row[5]}"  # Concaténer Titre et Rubrique
-                pertinence = calculer_pertinence(texte_article, mots_cles)
+        st.subheader("Tableau extrait:")
 
-                if pertinence > 0.5:  # Seuil de pertinence
-                    filtered_data.append(row)
+        # Définir les styles CSS pour le tableau
+        st.markdown(
+            """
+            <style>
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin-left: auto; /* Marge gauche automatique */
+                margin-right: auto; /* Marge droite automatique */
+                border: 1px solid #ddd;
+                background-color: #29292F; /* Fond sombre */
+            }
 
+            th, td {
+                border: 1px solid #ddd;
+                text-align: left;
+                padding: 8px;
+                color: #fff; /* Texte blanc */
+            }
+
+            tr:nth-child(even) {
+                background-color: #333; /* Ligne paire plus foncée */
+            }
+
+            th {
+                background-color: #333; /* En-têtes plus foncés */
+                font-weight: bold;
+            }
+
+            a {
+                color: #3080F8; /* Bleu clair pour les liens */
+                text-decoration: none; /* Supprimer le soulignement par défaut */
+            }
+
+            a:hover {
+                text-decoration: underline; /* Soulignement au survol */
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Ajouter ces lignes au début de la section st.markdown pour le tableau
+        st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
+
+        # Créer le tableau HTML avec les données extraites
+        st.markdown(
+            f"""
+            <table>
+                <thead>
+                    <tr>
+                        <th>{'</th><th>'.join(data[0])}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
+                </tbody>
+            </table>
+            """,
+            unsafe_allow_html=True
+        )
+        # Ajouter ces lignes à la fin de la section st.markdown pour le tableau
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Filtrer le tableau par mots-clés, date et rubrique
+        filtered_data = []
+        for row in data[1:]:  # Ignorer l'en-tête
+            # Vérifier si les mots-clés sont présents dans l'article
+            texte_article = f"{row[4]} {row[5]}"  # Concaténer Titre et Rubrique
+            pertinence = calculer_pertinence(texte_article, mots_cles)
+
+            # Vérifier si la date est dans la plage sélectionnée
+            date_publication = row[3]
+            if date_debut <= date_publication <= date_fin:
+                # Vérifier si la rubrique est sélectionnée
+                if any(rubrique in row[5] for rubrique in rubriques):
+                    if pertinence > 0.5:  # Seuil de pertinence
+                        filtered_data.append(row)
+
+        if filtered_data:
             st.subheader("Résultats filtrés:")
 
             # Définir les styles CSS pour le tableau
             st.markdown(
                 """
                 <style>
-                .table-container {
-                    display: flex;
-                    justify-content: center;
-                    width: 100%;
-                }
                 table {
                     border-collapse: collapse;
-                    width: 80%;
-                    max-width: 1200px;
+                    width: 100%;
+                    margin-left: auto; /* Marge gauche automatique */
+                    margin-right: auto; /* Marge droite automatique */
                     border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
@@ -151,7 +244,7 @@ if st.button("Editer"):
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
             st.markdown(
                 f"""
-                <div class="table-container">
+                <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
@@ -167,74 +260,34 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
+            # Générer des résumés avec OpenAI
+            if st.checkbox("Afficher les résumés"):
+                st.subheader("Résumés des articles:")
+                for row in filtered_data:
+                    resume = generer_resume(f"{row[4]} {row[5]}")
+                    st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
+                    st.write("---")
+
         else:
-            st.subheader("Tableau extrait:")
+            st.warning("Aucun résultat ne correspond aux filtres.")
 
-            # Définir les styles CSS pour le tableau
-            st.markdown(
-                """
-                <style>
-                .table-container {
-                    display: flex;
-                    justify-content: center;
-                    width: 100%;
-                }
-                table {
-                    border-collapse: collapse;
-                    width: 80%;
-                    max-width: 1200px;
-                    border: 1px solid #ddd;
-                    background-color: #29292F; /* Fond sombre */
-                }
+        # Extraire les fichiers Excel RASFF
+        rasff_articles = [row for row in data if 'Alertes' in row[2]]
+        for row in rasff_articles:
+            excel_link = row[2].split("](")[1].split(")")[0]  # Extraire le lien Excel
+            try:
+                excel_file = requests.get(excel_link)
+                excel_file.raise_for_status()
 
-                th, td {
-                    border: 1px solid #ddd;
-                    text-align: left;
-                    padding: 8px;
-                    color: #fff; /* Texte blanc */
-                }
+                # Charger les données Excel
+                df = pd.read_excel(excel_file.content)
 
-                tr:nth-child(even) {
-                    background-color: #333; /* Ligne paire plus foncée */
-                }
+                st.subheader(f"Données RASFF pour {row[3]}")
+                st.dataframe(df)
 
-                th {
-                    background-color: #333; /* En-têtes plus foncés */
-                    font-weight: bold;
-                }
+            except requests.exceptions.RequestException as e:
+                st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
 
-                a {
-                    color: #3080F8; /* Bleu clair pour les liens */
-                    text-decoration: none; /* Supprimer le soulignement par défaut */
-                }
-
-                a:hover {
-                    text-decoration: underline; /* Soulignement au survol */
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-
-            # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
-            st.markdown(
-                f"""
-                <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>{'</th><th>'.join(data[0])}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
-                    </tbody>
-                </table>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
-
