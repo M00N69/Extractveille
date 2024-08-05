@@ -1,18 +1,14 @@
 import streamlit as st
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 import nltk
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import spacy
 
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
-spacy.cli.download("fr_core_news_sm")  # Télécharger le modèle spaCy français
 
 def extraire_texte_et_liens(url):
     response = requests.get(url)
@@ -66,31 +62,30 @@ mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virg
 def calculer_pertinence(texte_article, mots_cles):
     # Prétraitement du texte (suppression des stopwords et lemmatisation)
     stop_words = set(stopwords.words('french'))
-    lemmatizer = WordNetLemmatizer()
+    lemmatizer = nltk.stem.WordNetLemmatizer()
     tokens_article = nltk.word_tokenize(texte_article)
     tokens_article = [lemmatizer.lemmatize(token.lower()) for token in tokens_article if token.isalpha() and token.lower() not in stop_words]
 
     tokens_mots_cles = nltk.word_tokenize(mots_cles)
     tokens_mots_cles = [lemmatizer.lemmatize(token.lower()) for token in tokens_mots_cles if token.isalpha() and token.lower() not in stop_words]
 
-    # Calculer la similarité cosinus basée sur TF-IDF
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([" ".join(tokens_article), " ".join(tokens_mots_cles)])
-    similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
+    # Convertir les tokens en chaînes de caractères
+    texte_article = " ".join(tokens_article) 
+    mots_cles = " ".join(tokens_mots_cles)
 
-    return similarity[0][0]
+    # Utiliser un ensemble de mots-clés pour une meilleure correspondance
+    mots_cles_set = set(tokens_mots_cles.split())
 
+    # Vérifier la présence de chaque mot-clé dans l'article
+    pertinence = 0
+    for mot_cle in mots_cles_set:
+        if mot_cle in texte_article.lower():
+            pertinence += 1
 
-# Charger un modèle spaCy pré-entraîné
-nlp = spacy.load("fr_core_news_sm") 
+    # Normaliser la pertinence
+    pertinence = pertinence / len(mots_cles_set)
 
-def calculer_pertinence_spacy(texte_article, mots_cles):
-    doc_article = nlp(texte_article)
-    doc_mots_cles = nlp(mots_cles)
-
-    # Calculer la similarité sémantique
-    similarity = doc_article.similarity(doc_mots_cles) 
-    return similarity
+    return pertinence
 
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
@@ -102,10 +97,9 @@ if st.button("Editer"):
             for row in data[1:]:  # Ignorer l'en-tête
                 # Vérifier si les mots-clés sont présents dans l'article
                 texte_article = f"{row[4]} {row[5]}"  # Concaténer Titre et Rubrique
-                # pertinence = calculer_pertinence(texte_article, mots_cles)
+                pertinence = calculer_pertinence(texte_article, mots_cles)
 
-                pertinence = calculer_pertinence_spacy(texte_article, mots_cles)
-                if pertinence > 0.4:  # Seuil de pertinence
+                if pertinence > 0.5:  # Seuil de pertinence
                     filtered_data.append(row)
 
             st.subheader("Résultats filtrés:")
