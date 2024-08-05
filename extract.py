@@ -13,11 +13,19 @@ def extraire_texte_et_liens(url):
         data = []
         for row in rows:
             cols = row.find_all('td')
-            if len(cols) >= 7:
-                row_data = [col.text.strip() for col in cols]
-                for i, col in enumerate(cols):
+            if len(cols) >= 7:  # Vérifier s'il y a au moins 7 colonnes
+                row_data = []
+                for col in cols:
+                    # Extraire le texte et le lien de chaque colonne
+                    text = col.text.strip()
                     if col.find('a'):
-                        row_data[i] = f"[{col.text.strip()}]({col.find('a')['href']})"
+                        link = col.find('a')['href']
+                        text = f"[{text}]({link})"
+                    row_data.append(text)
+
+                # Afficher des messages de débogage (à supprimer une fois que le code fonctionne)
+                st.write(f"Ligne: {row_data}")
+                
                 data.append(row_data)
 
         return data
@@ -61,7 +69,7 @@ if st.button("Extraire"):
             unsafe_allow_html=True
         )
 
-        for i, row in enumerate(data):  # Affiche chaque ligne avec des séparateurs
+        for i, row in enumerate(data):
             if i == 0:
                 st.markdown(f"{' | '.join(row)}", unsafe_allow_html=True)  # Affiche l'en-tête
             else:
