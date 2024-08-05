@@ -86,72 +86,6 @@ if st.button("Editer"):
     data = extraire_texte_et_liens(url)
 
     if data:
-        st.subheader("Tableau extrait:")
-
-        # Définir les styles CSS pour le tableau
-        st.markdown(
-            """
-            <style>
-            table {
-                border-collapse: collapse;
-                width: 100%;
-                border: 1px solid #ddd; 
-                background-color: #29292F; /* Fond sombre */
-            }
-
-            th, td {
-                border: 1px solid #ddd;
-                text-align: left;
-                padding: 8px;
-                color: #fff; /* Texte blanc */
-            }
-
-            tr:nth-child(even) {
-                background-color: #333; /* Ligne paire plus foncée */
-            }
-
-            th {
-                background-color: #333; /* En-têtes plus foncés */
-                font-weight: bold;
-            }
-
-            a {
-                color: #3080F8; /* Bleu clair pour les liens */
-                text-decoration: none; /* Supprimer le soulignement par défaut */
-            }
-
-            a:hover {
-                text-decoration: underline; /* Soulignement au survol */
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # Ajouter cette ligne au début de la section st.markdown pour le tableau
-        st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
-
-        # Créer le tableau HTML avec les données extraites
-        st.markdown(
-            f"""
-            <table>
-                <thead>
-                    <tr>
-                        <th>{'</th><th>'.join(data[0])}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
-                </tbody>
-            </table>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # Ajouter cette ligne à la fin de la section st.markdown pour le tableau
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # Filtrer le tableau par mots-clés
         if mots_cles:
             filtered_data = []
             for row in data[1:]:  # Ignorer l'en-tête
@@ -164,6 +98,50 @@ if st.button("Editer"):
 
             st.subheader("Résultats filtrés:")
 
+            # Définir les styles CSS pour le tableau
+            st.markdown(
+                """
+                <style>
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    border: 1px solid #ddd; 
+                    background-color: #29292F; /* Fond sombre */
+                }
+
+                th, td {
+                    border: 1px solid #ddd;
+                    text-align: left;
+                    padding: 8px;
+                    color: #fff; /* Texte blanc */
+                }
+
+                tr:nth-child(even) {
+                    background-color: #333; /* Ligne paire plus foncée */
+                }
+
+                th {
+                    background-color: #333; /* En-têtes plus foncés */
+                    font-weight: bold;
+                }
+
+                a {
+                    color: #3080F8; /* Bleu clair pour les liens */
+                    text-decoration: none; /* Supprimer le soulignement par défaut */
+                }
+
+                a:hover {
+                    text-decoration: underline; /* Soulignement au survol */
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # Ajouter cette ligne au début de la section st.markdown pour le tableau
+            st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
+
+            # Créer le tableau HTML avec les données extraites
             st.markdown(
                 f"""
                 <table>
@@ -179,8 +157,75 @@ if st.button("Editer"):
                 """,
                 unsafe_allow_html=True
             )
+
+            # Ajouter cette ligne à la fin de la section st.markdown pour le tableau
+            st.markdown("</div>", unsafe_allow_html=True)
+
         else:
-            st.write("Aucun filtre appliqué.")
+            st.subheader("Tableau extrait:")
+
+            # Définir les styles CSS pour le tableau
+            st.markdown(
+                """
+                <style>
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    border: 1px solid #ddd; 
+                    background-color: #29292F; /* Fond sombre */
+                }
+
+                th, td {
+                    border: 1px solid #ddd;
+                    text-align: left;
+                    padding: 8px;
+                    color: #fff; /* Texte blanc */
+                }
+
+                tr:nth-child(even) {
+                    background-color: #333; /* Ligne paire plus foncée */
+                }
+
+                th {
+                    background-color: #333; /* En-têtes plus foncés */
+                    font-weight: bold;
+                }
+
+                a {
+                    color: #3080F8; /* Bleu clair pour les liens */
+                    text-decoration: none; /* Supprimer le soulignement par défaut */
+                }
+
+                a:hover {
+                    text-decoration: underline; /* Soulignement au survol */
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # Ajouter cette ligne au début de la section st.markdown pour le tableau
+            st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
+
+            # Créer le tableau HTML avec les données extraites
+            st.markdown(
+                f"""
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{'</th><th>'.join(data[0])}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
+                    </tbody>
+                </table>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # Ajouter cette ligne à la fin de la section st.markdown pour le tableau
+            st.markdown("</div>", unsafe_allow_html=True)
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
