@@ -5,4 +5,5 @@ webdriver-manager
 selenium
 scikit-learn
 streamlit
-spacy
+google-generativeai
+pandas
