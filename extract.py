@@ -318,7 +318,7 @@ if st.button("Editer"):
                 excel_file.raise_for_status()
 
                 # Charger les données Excel
-                df = pd.read_excel(excel_file.content)
+                df = pd.read_excel(excel_file.content, engine='openpyxl')
 
                 st.subheader(f"Données RASFF pour {row[3]}")
                 st.dataframe(df)
