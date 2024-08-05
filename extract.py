@@ -61,8 +61,10 @@ if st.button("Extraire"):
             unsafe_allow_html=True
         )
 
-        st.markdown(f"{' | '.join(data[0])}", unsafe_allow_html=True)  # Affiche l'en-tête
-        for row in data[1:]:  # Affiche les lignes de données
-            st.markdown(f"{' | '.join(row)}", unsafe_allow_html=True)
+        for i, row in enumerate(data):  # Affiche chaque ligne avec des séparateurs
+            if i == 0:
+                st.markdown(f"{' | '.join(row)}", unsafe_allow_html=True)  # Affiche l'en-tête
+            else:
+                st.markdown(f"{' | '.join(row)}", unsafe_allow_html=True)
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
