@@ -42,8 +42,6 @@ if st.button("Extraire"):
             table {
                 border-collapse: collapse;
                 width: 100%;
-                border: 1px solid #ddd; 
-                background-color: #29292F; /* Fond sombre */
             }
 
             th, td {
@@ -54,11 +52,11 @@ if st.button("Extraire"):
             }
 
             tr:nth-child(even) {
-                background-color: #333; /* Ligne paire un peu plus sombre */
+                background-color: #333; /* Ligne paire plus foncée */
             }
 
             th {
-                background-color: #333; /* En-têtes plus sombres */
+                background-color: #333; /* En-têtes plus foncés */
                 font-weight: bold;
             }
 
@@ -75,10 +73,22 @@ if st.button("Extraire"):
             unsafe_allow_html=True
         )
 
-        for i, row in enumerate(data):  # Affiche chaque ligne avec des séparateurs
-            if i == 0:
-                st.markdown(f"{' | '.join(row)}", unsafe_allow_html=True)  # Affiche l'en-tête
-            else:
-                st.markdown(f"{' | '.join(row)}", unsafe_allow_html=True)
+        # Créer le tableau HTML avec les données extraites
+        st.markdown(
+            f"""
+            <table>
+                <thead>
+                    <tr>
+                        <th>{'</th><th>'.join(data[0])}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
+                </tbody>
+            </table>
+            """,
+            unsafe_allow_html=True
+        )
+
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
