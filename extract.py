@@ -5,22 +5,19 @@ import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Configuration de l'API Gemini
-# openai.api_key = "YOUR_API_KEY"
-
 # Fonction pour extraire les articles du site web
 def extraire_articles(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     articles = []
-    for article in soup.find_all('div', id='content-core'):
+    for article in soup.find_all('tr'):
         try:
-            titre = article.find('h1', class_='documentFirstHeading').text.strip()
-            lien = article.find('a', href=True)['href']
-            resume = article.find('p', style='text-indent:0; line-height:110%; margin-top:1mm; margin-bottom:1mm; margin-left:0;').text.strip()
-            date_publication = article.find('p', class_='western').text.strip()
-            rubrique = article.find('p', style='text-indent:0; line-height:110%; margin-top:1mm; margin-bottom:1mm; margin-left:0;').find_previous('p').text.strip()
-
+            titre = article.find('a').text.strip()
+            lien = article.find('a')['href']
+            resume = article.find('td', class_='resume').text.strip()
+            date_publication = article.find('td', class_='date').text.strip()
+            rubrique = article.find('td', class_='rubrique').text.strip()
+            
             articles.append({
                 'titre': titre,
                 'resume': resume,
@@ -28,8 +25,8 @@ def extraire_articles(url):
                 'rubrique': rubrique,
                 'lien': lien
             })
-        except:
-            pass
+        except AttributeError:
+            pass  # Ignore les lignes qui manquent d'informations
     return articles
 
 # Fonction pour prétraiter le texte
