@@ -25,10 +25,10 @@ def extraire_texte_et_liens(url):
         return None
 
 # Page Streamlit
-st.title("IA-Reader")
-st.write("Extraction du tableau et des liens du bulletin Alexia")
+st.title("VEILLE EN IAA")
+st.write("Extraction du tableau et des liens du bulletin de veille")
 
-if st.button("Extraire"):
+if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
 
