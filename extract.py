@@ -142,10 +142,8 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
-            # Ajouter cette ligne au début de la section st.markdown pour le tableau
+            # Ajouter ces lignes au début de la section st.markdown pour le tableau
             st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
-
-            # Créer le tableau HTML avec les données extraites
             st.markdown(
                 f"""
                 <table>
@@ -161,8 +159,7 @@ if st.button("Editer"):
                 """,
                 unsafe_allow_html=True
             )
-
-            # Ajouter cette ligne à la fin de la section st.markdown pour le tableau
+            # Ajouter ces lignes à la fin de la section st.markdown pour le tableau
             st.markdown("</div>", unsafe_allow_html=True)
 
         else:
@@ -208,10 +205,8 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
-            # Ajouter cette ligne au début de la section st.markdown pour le tableau
+            # Ajouter ces lignes au début de la section st.markdown pour le tableau
             st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
-
-            # Créer le tableau HTML avec les données extraites
             st.markdown(
                 f"""
                 <table>
@@ -227,8 +222,7 @@ if st.button("Editer"):
                 """,
                 unsafe_allow_html=True
             )
-
-            # Ajouter cette ligne à la fin de la section st.markdown pour le tableau
+            # Ajouter ces lignes à la fin de la section st.markdown pour le tableau
             st.markdown("</div>", unsafe_allow_html=True)
 
     else:
