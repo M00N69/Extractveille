@@ -152,7 +152,10 @@ if st.button("Editer"):
             filtered_data = []
             for row in data[1:]:  # Ignorer l'en-tête
                 # Vérifier si les mots-clés sont présents dans l'article
-                if any(mot_cle in row[4].lower() for mot_cle in mots_cles.lower().split(",")):
+                texte_article = f"{row[4]} {row[5]}"  # Concaténer Titre et Rubrique
+                pertinence = calculer_pertinence(texte_article, mots_cles)
+
+                if pertinence > 0.1:  # Seuil de pertinence
                     filtered_data.append(row)
 
             st.subheader("Résultats filtrés:")
