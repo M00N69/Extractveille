@@ -109,7 +109,7 @@ if st.button("Editer"):
                 table {
                     border-collapse: collapse;
                     width: 100%;
-                    border: 1px solid #ddd; 
+                    border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
 
@@ -142,8 +142,24 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
-            # Utiliser la fonction st.table() pour afficher le tableau en mode "wide"
-            st.table(filtered_data)  
+            # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
+            st.markdown(
+                f"""
+                <div style="width: 100%; overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{'</th><th>'.join(data[0])}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in filtered_data)}
+                    </tbody>
+                </table>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         else:
             st.subheader("Tableau extrait:")
@@ -188,8 +204,24 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
-            # Utiliser la fonction st.table() pour afficher le tableau en mode "wide"
-            st.table(data[1:])  
+            # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
+            st.markdown(
+                f"""
+                <div style="width: 100%; overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{'</th><th>'.join(data[0])}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
+                    </tbody>
+                </table>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
