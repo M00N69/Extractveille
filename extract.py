@@ -3,13 +3,14 @@ import requests
 from bs4 import BeautifulSoup
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import spacy
 
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
+spacy.cli.download("fr_core_news_sm")  # Télécharger le modèle spaCy français
 
 def extraire_texte_et_liens(url):
     response = requests.get(url)
@@ -77,6 +78,18 @@ def calculer_pertinence(texte_article, mots_cles):
 
     return similarity[0][0]
 
+
+# Charger un modèle spaCy pré-entraîné
+nlp = spacy.load("fr_core_news_sm") 
+
+def calculer_pertinence_spacy(texte_article, mots_cles):
+    doc_article = nlp(texte_article)
+    doc_mots_cles = nlp(mots_cles)
+
+    # Calculer la similarité sémantique
+    similarity = doc_article.similarity(doc_mots_cles) 
+    return similarity
+
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
@@ -87,9 +100,10 @@ if st.button("Editer"):
             for row in data[1:]:  # Ignorer l'en-tête
                 # Vérifier si les mots-clés sont présents dans l'article
                 texte_article = f"{row[4]} {row[5]}"  # Concaténer Titre et Rubrique
-                pertinence = calculer_pertinence(texte_article, mots_cles)
+                # pertinence = calculer_pertinence(texte_article, mots_cles)
 
-                if pertinence > 0.1:  # Seuil de pertinence
+                pertinence = calculer_pertinence_spacy(texte_article, mots_cles)
+                if pertinence > 0.4:  # Seuil de pertinence
                     filtered_data.append(row)
 
             st.subheader("Résultats filtrés:")
@@ -101,7 +115,7 @@ if st.button("Editer"):
                 table {
                     border-collapse: collapse;
                     width: 100%;
-                    border: 1px solid #ddd;
+                    border: 1px solid #ddd; 
                     background-color: #29292F; /* Fond sombre */
                 }
 
