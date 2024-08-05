@@ -62,8 +62,8 @@ st.sidebar.title("Filtres")
 mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
 
 # Filtre par date
-date_debut = st.sidebar.date_input("Date de début:")
-date_fin = st.sidebar.date_input("Date de fin:")
+date_debut = st.sidebar.date_input("Date de début:", datetime.now())
+date_fin = st.sidebar.date_input("Date de fin:", datetime.now())
 
 # Filtre par rubrique
 rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"])
@@ -225,7 +225,7 @@ if st.button("Editer"):
 
             if date_debut <= date_publication <= date_fin:
                 # Vérifier si la rubrique est sélectionnée
-                if any(rubrique in row[5] for rubrique in rubriques):
+                if not rubriques or any(rubrique in row[5] for rubrique in rubriques):
                     if pertinence > 0.5:  # Seuil de pertinence
                         filtered_data.append(row)
 
