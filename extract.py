@@ -12,7 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 def extraire_html_complet(url):
     options = Options()
     options.add_argument('--headless=new')  # Exécuter en mode headless
-    driver = webdriver.Chrome(ChromeDriverManager().install()) 
+    driver = webdriver.Chrome(ChromeDriverManager(options=options).install()) 
     driver.get(url)
 
     # Attendre que le contenu soit chargé 
