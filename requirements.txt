@@ -1,6 +1,7 @@
 beautifulsoup4
 requests
 nltk
+webdriver-manager
 selenium
 scikit-learn
 streamlit
