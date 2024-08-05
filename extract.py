@@ -42,6 +42,8 @@ if st.button("Extraire"):
             table {
                 border-collapse: collapse;
                 width: 100%;
+                border: 1px solid #ddd; 
+                background-color: #29292F; /* Fond sombre */
             }
 
             th, td {
@@ -73,6 +75,9 @@ if st.button("Extraire"):
             unsafe_allow_html=True
         )
 
+        # Ajouter cette ligne au début de la section st.markdown pour le tableau
+        st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
+
         # Créer le tableau HTML avec les données extraites
         st.markdown(
             f"""
@@ -89,6 +94,9 @@ if st.button("Extraire"):
             """,
             unsafe_allow_html=True
         )
+
+        # Ajouter cette ligne à la fin de la section st.markdown pour le tableau
+        st.markdown("</div>", unsafe_allow_html=True)
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
