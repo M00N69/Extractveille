@@ -170,7 +170,7 @@ if st.button("Editer"):
                 <style>
                 table {
                     border-collapse: collapse;
-                    width: 100%;
+                    width: 150%;
                     border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
