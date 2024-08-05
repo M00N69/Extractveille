@@ -6,7 +6,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
 import google.generativeai as genai
+from datetime import datetime
 
+# Ensure NLTK dependencies are downloaded
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
@@ -70,7 +72,7 @@ rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Alertes alimen
 def calculer_pertinence(texte_article, mots_cles):
     # Prétraitement du texte (suppression des stopwords et lemmatisation)
     stop_words = set(stopwords.words('french'))
-    lemmatizer = nltk.stem.WordNetLemmatizer()
+    lemmatizer = WordNetLemmatizer()
     tokens_article = nltk.word_tokenize(texte_article)
     tokens_article = [lemmatizer.lemmatize(token.lower()) for token in tokens_article if token.isalpha() and token.lower() not in stop_words]
 
@@ -91,7 +93,7 @@ def calculer_pertinence(texte_article, mots_cles):
             pertinence += 1
 
     # Normaliser la pertinence
-    pertinence = pertinence / len(mots_cles_set)
+    pertinence = pertinence / len(mots_cles_set) if mots_cles_set else 0
 
     return pertinence
 
@@ -147,11 +149,15 @@ if st.button("Editer"):
         st.markdown(
             """
             <style>
+            .table-container {
+                display: flex;
+                justify-content: center;
+                width: 100%;
+            }
             table {
                 border-collapse: collapse;
-                width: 100%;
-                margin-left: auto; /* Marge gauche automatique */
-                margin-right: auto; /* Marge droite automatique */
+                width: 80%;
+                max-width: 1200px;
                 border: 1px solid #ddd;
                 background-color: #29292F; /* Fond sombre */
             }
@@ -188,7 +194,7 @@ if st.button("Editer"):
         # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
         st.markdown(
             f"""
-            <div style="overflow-x: auto;">
+            <div class="table-container">
             <table>
                 <thead>
                     <tr>
@@ -212,7 +218,11 @@ if st.button("Editer"):
             pertinence = calculer_pertinence(texte_article, mots_cles)
 
             # Vérifier si la date est dans la plage sélectionnée
-            date_publication = row[3]
+            try:
+                date_publication = datetime.strptime(row[3], "%d/%m/%Y").date()
+            except ValueError:
+                continue
+
             if date_debut <= date_publication <= date_fin:
                 # Vérifier si la rubrique est sélectionnée
                 if any(rubrique in row[5] for rubrique in rubriques):
@@ -226,11 +236,15 @@ if st.button("Editer"):
             st.markdown(
                 """
                 <style>
+                .table-container {
+                    display: flex;
+                    justify-content: center;
+                    width: 100%;
+                }
                 table {
                     border-collapse: collapse;
-                    width: 100%;
-                    margin-left: auto; /* Marge gauche automatique */
-                    margin-right: auto; /* Marge droite automatique */
+                    width: 80%;
+                    max-width: 1200px;
                     border: 1px solid #ddd;
                     background-color: #29292F; /* Fond sombre */
                 }
@@ -267,7 +281,7 @@ if st.button("Editer"):
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
             st.markdown(
                 f"""
-                <div style="overflow-x: auto;">
+                <div class="table-container">
                 <table>
                     <thead>
                         <tr>
@@ -287,7 +301,7 @@ if st.button("Editer"):
             if st.checkbox("Afficher les résumés"):
                 st.subheader("Résumés des articles:")
                 for row in filtered_data:
-                    lien_resume = row[1].split("](")[1].split(")")[0]  # Extraire le lien "Résumé"
+                    lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
                     resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
                     st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
                     st.write("---")
@@ -298,7 +312,7 @@ if st.button("Editer"):
         # Extraire les fichiers Excel RASFF
         rasff_articles = [row for row in data if 'Alertes' in row[2]]
         for row in rasff_articles:
-            excel_link = row[2].split("](")[1].split(")")[0]  # Extraire le lien Excel
+            excel_link = row[2].split("href='")[1].split("'")[0]  # Extraire le lien Excel
             try:
                 excel_file = requests.get(excel_link)
                 excel_file.raise_for_status()
@@ -311,7 +325,6 @@ if st.button("Editer"):
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
-
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
