@@ -11,26 +11,7 @@ nltk.download('punkt')
 nltk.download('wordnet')
 
 def extraire_texte_et_liens(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.content, 'html.parser')
-
-    table = soup.find('table')
-    if table:
-        rows = table.find_all('tr')
-        data = []
-        for row in rows:
-            cols = row.find_all('td')
-            if len(cols) >= 7:
-                row_data = [col.text.strip() for col in cols]
-                for i, col in enumerate(cols):
-                    if col.find('a'):
-                        row_data[i] = f"<a href='{col.find('a')['href']}'>{col.text.strip()}</a>"
-                data.append(row_data)
-
-        return data
-    else:
-        return None
+    # ... (Code existant de la fonction)
 
 # URL du GIF
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTl6aXY3dXp3djdjYzVyNGMyYWpnN3g3bnZ0NXo1emJ4aDdmdmY3YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/a3IGFA4BKrE40/giphy.gif"
@@ -70,9 +51,13 @@ def calculer_pertinence(texte_article, mots_cles):
     tokens_mots_cles = [token.lower() for token in tokens_mots_cles if token.isalpha() and token.lower() not in stop_words]
     tokens_mots_cles = [nltk.stem.WordNetLemmatizer().lemmatize(token) for token in tokens_mots_cles]
 
+    # Convertir les tokens en chaînes de caractères
+    texte_article = " ".join(tokens_article) 
+    mots_cles = " ".join(tokens_mots_cles)
+
     # Vectorisation TF-IDF
     vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([tokens_article, tokens_mots_cles])
+    tfidf_matrix = vectorizer.fit_transform([texte_article, mots_cles])
     similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
 
     return similarity[0][0]
