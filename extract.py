@@ -4,14 +4,15 @@ import requests
 import nltk
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Fonction pour extraire le HTML complet
 def extraire_html_complet(url):
     options = Options()
-    options.add_argument('--headless=new')  # Exécuter le navigateur en mode headless 
-    driver = webdriver.Chrome(options=options)  # Utilisez le pilote Chrome
+    options.add_argument('--headless=new')  # Exécuter en mode headless
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
     driver.get(url)
 
     # Attendre que le contenu soit chargé 
