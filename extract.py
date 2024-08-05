@@ -1,6 +1,14 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
+import nltk
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('wordnet')
 
 def extraire_texte_et_liens(url):
     response = requests.get(url)
@@ -23,6 +31,7 @@ def extraire_texte_et_liens(url):
         return data
     else:
         return None
+
 # URL du GIF
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTl6aXY3dXp3djdjYzVyNGMyYWpnN3g3bnZ0NXo1emJ4aDdmdmY3YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/a3IGFA4BKrE40/giphy.gif"
 
@@ -42,6 +51,38 @@ st.markdown(css_background, unsafe_allow_html=True)
 # Page Streamlit
 st.title("VEILLE EN IAA")
 st.write("Extraction du tableau et des liens du bulletin de veille")
+
+# Barre latérale gauche pour les filtres
+st.sidebar.title("Filtres")
+
+# Filtre par mots-clés
+mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
+
+# Filtre par date (à implémenter)
+# date_debut = st.sidebar.date_input("Date de début:")
+# date_fin = st.sidebar.date_input("Date de fin:")
+
+# Filtre par rubrique (à implémenter)
+# rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Rubrique 1", "Rubrique 2", "Rubrique 3"])
+
+# Fonction pour calculer la pertinence des articles
+def calculer_pertinence(texte_article, mots_cles):
+    # Prétraitement du texte (suppression des stopwords et lemmatisation)
+    stop_words = set(stopwords.words('french'))
+    tokens_article = nltk.word_tokenize(texte_article)
+    tokens_article = [token.lower() for token in tokens_article if token.isalpha() and token.lower() not in stop_words]
+    tokens_article = [nltk.stem.WordNetLemmatizer().lemmatize(token) for token in tokens_article]
+
+    tokens_mots_cles = nltk.word_tokenize(mots_cles)
+    tokens_mots_cles = [token.lower() for token in tokens_mots_cles if token.isalpha() and token.lower() not in stop_words]
+    tokens_mots_cles = [nltk.stem.WordNetLemmatizer().lemmatize(token) for token in tokens_mots_cles]
+
+    # Vectorisation TF-IDF
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform([tokens_article, tokens_mots_cles])
+    similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
+
+    return similarity[0][0]
 
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
