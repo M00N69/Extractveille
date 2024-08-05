@@ -5,3 +5,4 @@ webdriver-manager
 selenium
 scikit-learn
 streamlit
+spacy
