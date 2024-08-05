@@ -109,7 +109,7 @@ if st.button("Editer"):
                 table {
                     border-collapse: collapse;
                     width: 100%;
-                    border: 1px solid #ddd;
+                    border: 1px solid #ddd; 
                     background-color: #29292F; /* Fond sombre */
                 }
 
@@ -142,8 +142,25 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
-            # Utiliser la fonction st.table() pour afficher le tableau en mode "wide"
-            st.table(filtered_data)  
+            # Ajouter ces lignes au début de la section st.markdown pour le tableau
+            st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{'</th><th>'.join(data[0])}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in filtered_data)}
+                    </tbody>
+                </table>
+                """,
+                unsafe_allow_html=True
+            )
+            # Ajouter ces lignes à la fin de la section st.markdown pour le tableau
+            st.markdown("</div>", unsafe_allow_html=True)
 
         else:
             st.subheader("Tableau extrait:")
@@ -188,8 +205,25 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
-            # Utiliser la fonction st.table() pour afficher le tableau en mode "wide"
-            st.table(data[1:])  
+            # Ajouter ces lignes au début de la section st.markdown pour le tableau
+            st.markdown("<div style='width: 100%; overflow-x: auto;'>", unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{'</th><th>'.join(data[0])}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
+                    </tbody>
+                </table>
+                """,
+                unsafe_allow_html=True
+            )
+            # Ajouter ces lignes à la fin de la section st.markdown pour le tableau
+            st.markdown("</div>", unsafe_allow_html=True)
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
