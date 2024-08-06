@@ -84,16 +84,13 @@ rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Alertes alimen
 if st.sidebar.button("Réinitialiser les filtres"):
     st.experimental_rerun()
 
-# Initialize session state for showing summaries
-if 'show_summaries' not in st.session_state:
-    st.session_state.show_summaries = False
+# Initialize session state for selected row for analysis
+if 'selected_row' not in st.session_state:
+    st.session_state.selected_row = None
 
-# Function to toggle the display of summaries
-def toggle_summaries():
-    st.session_state.show_summaries = not st.session_state.show_summaries
-
-# Button to toggle summaries
-st.sidebar.button("Afficher les résumés", on_click=toggle_summaries)
+# Function to set selected row for analysis
+def select_row_for_analysis(row):
+    st.session_state.selected_row = row
 
 # Fonction pour calculer la pertinence des articles
 def calculer_pertinence(texte_article, mots_cles):
@@ -231,7 +228,7 @@ if st.button("Editer"):
                         </tr>
                     </thead>
                     <tbody>
-                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in data[1:])}
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td><button onClick="select_row_for_analysis({row})">Analyser</button></td></tr>' for row in data[1:])}
                     </tbody>
                 </table>
                 </div>
@@ -302,6 +299,18 @@ if st.button("Editer"):
                 a:hover {
                     text-decoration: underline; /* Soulignement au survol */
                 }
+
+                .analyze-button {
+                    padding: 4px 8px;
+                    color: #fff;
+                    background-color: #3080F8;
+                    border: none;
+                    cursor: pointer;
+                }
+
+                .analyze-button:hover {
+                    background-color: #1A5BB1;
+                }
                 </style>
                 """,
                 unsafe_allow_html=True
@@ -318,7 +327,7 @@ if st.button("Editer"):
                         </tr>
                     </thead>
                     <tbody>
-                        {''.join(f'<tr><td>{"</td><td>".join(row)}</td></tr>' for row in filtered_data)}
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td><button class="analyze-button" onClick="select_row_for_analysis({row})">Analyser</button></td></tr>' for row in filtered_data)}
                     </tbody>
                 </table>
                 </div>
@@ -330,13 +339,13 @@ if st.button("Editer"):
             st.warning("Aucun résultat ne correspond aux filtres.")
 
         # Générer des résumés avec Gemini
-        if st.session_state.show_summaries and filtered_data:
-            st.subheader("Résumés des articles:")
-            for row in filtered_data:
-                lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
-                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
-                st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
-                st.write("---")
+        if st.session_state.selected_row:
+            st.subheader("Analyse de l'article sélectionné:")
+            row = st.session_state.selected_row
+            lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
+            resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
+            st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
+            st.write("---")
 
         # Extraire les fichiers Excel RASFF
         rasff_articles = [row for row in data if 'Alertes' in row[2]]
@@ -357,4 +366,5 @@ if st.button("Editer"):
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
+
 
