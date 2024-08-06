@@ -58,6 +58,18 @@ st.write("Extraction du tableau et des liens du bulletin de veille")
 # Barre latérale gauche pour les filtres
 st.sidebar.title("Filtres")
 
+# Introduction
+st.sidebar.markdown("""
+## Introduction
+Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
+- **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
+- **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
+- **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
+- **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
+- **Afficher le tableau principal**: Cochez pour afficher ou masquer le tableau principal.
+- **Afficher les résumés**: Cliquez pour afficher les résumés des articles filtrés.
+""")
+
 # Filtre par mots-clés
 mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
 
@@ -304,17 +316,17 @@ if st.button("Editer"):
                 unsafe_allow_html=True
             )
 
-            # Générer des résumés avec Gemini
-            if show_summaries_button:
-                st.subheader("Résumés des articles:")
-                for row in filtered_data:
-                    lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
-                    resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
-                    st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
-                    st.write("---")
-
         else:
             st.warning("Aucun résultat ne correspond aux filtres.")
+
+        # Générer des résumés avec Gemini
+        if show_summaries_button and filtered_data:
+            st.subheader("Résumés des articles:")
+            for row in filtered_data:
+                lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
+                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
+                st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
+                st.write("---")
 
         # Extraire les fichiers Excel RASFF
         rasff_articles = [row for row in data if 'Alertes' in row[2]]
@@ -335,4 +347,3 @@ if st.button("Editer"):
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
-
