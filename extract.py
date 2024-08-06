@@ -89,8 +89,8 @@ if 'selected_row' not in st.session_state:
     st.session_state.selected_row = None
 
 # Function to set selected row for analysis
-def select_row_for_analysis(row):
-    st.session_state.selected_row = row
+def select_row_for_analysis(index):
+    st.session_state.selected_row = index
 
 # Fonction pour calculer la pertinence des articles
 def calculer_pertinence(texte_article, mots_cles):
@@ -212,6 +212,18 @@ if st.button("Editer"):
                 a:hover {
                     text-decoration: underline; /* Soulignement au survol */
                 }
+
+                .analyze-button {
+                    padding: 4px 8px;
+                    color: #fff;
+                    background-color: #3080F8;
+                    border: none;
+                    cursor: pointer;
+                }
+
+                .analyze-button:hover {
+                    background-color: #1A5BB1;
+                }
                 </style>
                 """,
                 unsafe_allow_html=True
@@ -228,7 +240,7 @@ if st.button("Editer"):
                         </tr>
                     </thead>
                     <tbody>
-                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td><button onClick="select_row_for_analysis({row})">Analyser</button></td></tr>' for row in data[1:])}
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td><button class="analyze-button" onClick="select_row_for_analysis({data[1:].index(row)})">Analyser</button></td></tr>' for row in data[1:])}
                     </tbody>
                 </table>
                 </div>
@@ -327,7 +339,7 @@ if st.button("Editer"):
                         </tr>
                     </thead>
                     <tbody>
-                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td><button class="analyze-button" onClick="select_row_for_analysis({row})">Analyser</button></td></tr>' for row in filtered_data)}
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td><button class="analyze-button" onClick="select_row_for_analysis({filtered_data.index(row)})">Analyser</button></td></tr>' for row in filtered_data)}
                     </tbody>
                 </table>
                 </div>
@@ -339,9 +351,9 @@ if st.button("Editer"):
             st.warning("Aucun résultat ne correspond aux filtres.")
 
         # Générer des résumés avec Gemini
-        if st.session_state.selected_row:
+        if st.session_state.selected_row is not None:
             st.subheader("Analyse de l'article sélectionné:")
-            row = st.session_state.selected_row
+            row = filtered_data[st.session_state.selected_row]
             lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
             resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
             st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
