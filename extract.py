@@ -149,6 +149,7 @@ if st.button("Editer"):
     if data:
         st.subheader("Tableau extrait:")
         show_main_table = st.sidebar.checkbox("Afficher le tableau principal", value=True)
+        show_summaries_button = st.sidebar.button("Afficher les résumés")
 
         if show_main_table:
             # Définir les styles CSS pour le tableau
@@ -304,7 +305,7 @@ if st.button("Editer"):
             )
 
             # Générer des résumés avec Gemini
-            if st.checkbox("Afficher les résumés"):
+            if show_summaries_button:
                 st.subheader("Résumés des articles:")
                 for row in filtered_data:
                     lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
@@ -334,3 +335,4 @@ if st.button("Editer"):
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
+
