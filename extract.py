@@ -67,7 +67,6 @@ with st.sidebar.expander("Introduction"):
     - **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
     - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
     - **Afficher le tableau principal**: Cochez pour afficher ou masquer le tableau principal.
-    - **Afficher les résumés**: Cliquez pour afficher les résumés des articles filtrés.
     """)
 
 # Filtre par mots-clés
@@ -240,7 +239,7 @@ if st.button("Editer"):
                         </tr>
                     </thead>
                     <tbody>
-                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td><button class="analyze-button" onClick="select_row_for_analysis({data[1:].index(row)})">Analyser</button></td></tr>' for row in data[1:])}
+                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td>{st.button("Analyser", key=f"analyze_{i}", on_click=select_row_for_analysis, args=(i,))}</td></tr>' for i, row in enumerate(data[1:]))}
                     </tbody>
                 </table>
                 </div>
@@ -250,7 +249,7 @@ if st.button("Editer"):
 
         # Filtrer le tableau par mots-clés, date et rubrique
         filtered_data = []
-        for row in data[1:]:  # Ignorer l'en-tête
+        for i, row in enumerate(data[1:]):  # Ignorer l'en-tête
             # Vérifier si les mots-clés sont présents dans l'article
             texte_article = f"{row[4]} {row[5]}"  # Concaténer Titre et Rubrique
             pertinence = calculer_pertinence(texte_article, mots_cles)
@@ -265,7 +264,7 @@ if st.button("Editer"):
                 # Vérifier si la rubrique est sélectionnée
                 if not rubriques or any(rubrique in row[5] for rubrique in rubriques):
                     if pertinence > 0.5:  # Seuil de pertinence
-                        filtered_data.append(row)
+                        filtered_data.append((i, row))
 
         if filtered_data:
             st.subheader("Résultats filtrés:")
@@ -329,33 +328,35 @@ if st.button("Editer"):
             )
 
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
-            st.markdown(
-                f"""
-                <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>{'</th><th>'.join(data[0])}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td><button class="analyze-button" onClick="select_row_for_analysis({filtered_data.index(row)})">Analyser</button></td></tr>' for row in filtered_data)}
-                    </tbody>
-                </table>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            for i, row in filtered_data:
+                st.markdown(
+                    f"""
+                    <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{'</th><th>'.join(data[0])}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>{"</td><td>".join(row)}<td>{st.button("Analyser", key=f"analyze_filtered_{i}", on_click=select_row_for_analysis, args=(i,))}</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
         else:
             st.warning("Aucun résultat ne correspond aux filtres.")
 
         # Générer des résumés avec Gemini
         if st.session_state.selected_row is not None:
+            row_index, row = filtered_data[st.session_state.selected_row]
             st.subheader("Analyse de l'article sélectionné:")
-            row = filtered_data[st.session_state.selected_row]
             lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
-            resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
+            with st.spinner('Analyse en cours...'):
+                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
             st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
             st.write("---")
 
