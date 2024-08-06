@@ -211,6 +211,18 @@ if st.button("Editer"):
                 a:hover {
                     text-decoration: underline; /* Soulignement au survol */
                 }
+
+                .analyze-button {
+                    padding: 4px 8px;
+                    color: #fff;
+                    background-color: #3080F8;
+                    border: none;
+                    cursor: pointer;
+                }
+
+                .analyze-button:hover {
+                    background-color: #1A5BB1;
+                }
                 </style>
                 """,
                 unsafe_allow_html=True
@@ -222,7 +234,8 @@ if st.button("Editer"):
             st.markdown('<tbody>', unsafe_allow_html=True)
             
             for i, row in enumerate(data[1:]):
-                st.markdown('<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>', unsafe_allow_html=True)
+                row_html = '<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>'
+                st.markdown(row_html, unsafe_allow_html=True)
 
             st.markdown('</tbody></table></div>', unsafe_allow_html=True)
 
@@ -253,9 +266,8 @@ if st.button("Editer"):
             st.markdown('<tbody>', unsafe_allow_html=True)
             
             for i, row in filtered_data:
-                if st.button(f"Analyser {i}", key=f"analyze_filtered_{i}"):
-                    select_row_for_analysis(i)
-                st.markdown('<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>', unsafe_allow_html=True)
+                row_html = '<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>'
+                st.markdown(row_html, unsafe_allow_html=True)
 
             st.markdown('</tbody></table></div>', unsafe_allow_html=True)
 
@@ -268,8 +280,11 @@ if st.button("Editer"):
             st.subheader("Analyse de l'article sélectionné:")
             lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
             with st.spinner('Analyse en cours...'):
-                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
-            st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
+                try:
+                    resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)  # Passer le lien "Résumé"
+                    st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
+                except Exception as e:
+                    st.error(f"Erreur lors de l'analyse : {e}")
             st.write("---")
 
         # Extraire les fichiers Excel RASFF
@@ -291,4 +306,3 @@ if st.button("Editer"):
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
-
