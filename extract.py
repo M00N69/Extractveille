@@ -58,17 +58,17 @@ st.write("Extraction du tableau et des liens du bulletin de veille")
 # Barre latérale gauche pour les filtres
 st.sidebar.title("Filtres")
 
-# Introduction
-st.sidebar.markdown("""
-## Introduction
-Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
-- **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
-- **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
-- **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
-- **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
-- **Afficher le tableau principal**: Cochez pour afficher ou masquer le tableau principal.
-- **Afficher les résumés**: Cliquez pour afficher les résumés des articles filtrés.
-""")
+# Introduction with collapse/expand effect
+with st.sidebar.expander("Introduction"):
+    st.markdown("""
+    Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
+    - **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
+    - **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
+    - **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
+    - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
+    - **Afficher le tableau principal**: Cochez pour afficher ou masquer le tableau principal.
+    - **Afficher les résumés**: Cliquez pour afficher les résumés des articles filtrés.
+    """)
 
 # Filtre par mots-clés
 mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
@@ -83,6 +83,17 @@ rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Alertes alimen
 # Button to clear all filters
 if st.sidebar.button("Réinitialiser les filtres"):
     st.experimental_rerun()
+
+# Initialize session state for showing summaries
+if 'show_summaries' not in st.session_state:
+    st.session_state.show_summaries = False
+
+# Function to toggle the display of summaries
+def toggle_summaries():
+    st.session_state.show_summaries = not st.session_state.show_summaries
+
+# Button to toggle summaries
+st.sidebar.button("Afficher les résumés", on_click=toggle_summaries)
 
 # Fonction pour calculer la pertinence des articles
 def calculer_pertinence(texte_article, mots_cles):
@@ -161,7 +172,6 @@ if st.button("Editer"):
     if data:
         st.subheader("Tableau extrait:")
         show_main_table = st.sidebar.checkbox("Afficher le tableau principal", value=True)
-        show_summaries_button = st.sidebar.button("Afficher les résumés")
 
         if show_main_table:
             # Définir les styles CSS pour le tableau
@@ -320,7 +330,7 @@ if st.button("Editer"):
             st.warning("Aucun résultat ne correspond aux filtres.")
 
         # Générer des résumés avec Gemini
-        if show_summaries_button and filtered_data:
+        if st.session_state.show_summaries and filtered_data:
             st.subheader("Résumés des articles:")
             for row in filtered_data:
                 lien_resume = row[1].split("href='")[1].split("'")[0]  # Extraire le lien "Résumé"
@@ -347,3 +357,4 @@ if st.button("Editer"):
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
+
