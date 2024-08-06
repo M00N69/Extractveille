@@ -229,15 +229,15 @@ if st.button("Editer"):
             )
 
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
-            st.markdown('<div class="table-container"><table>', unsafe_allow_html=True)
-            st.markdown('<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>', unsafe_allow_html=True)
-            st.markdown('<tbody>', unsafe_allow_html=True)
+            table_html = '<div class="table-container"><table>'
+            table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+            table_html += '<tbody>'
             
             for i, row in enumerate(data[1:]):
-                row_html = '<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>'
-                st.markdown(row_html, unsafe_allow_html=True)
-
-            st.markdown('</tbody></table></div>', unsafe_allow_html=True)
+                table_html += '<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>'
+            
+            table_html += '</tbody></table></div>'
+            st.markdown(table_html, unsafe_allow_html=True)
 
         # Filtrer le tableau par mots-clés, date et rubrique
         filtered_data = []
@@ -261,15 +261,15 @@ if st.button("Editer"):
         if filtered_data:
             st.subheader("Résultats filtrés:")
 
-            st.markdown('<div class="table-container"><table>', unsafe_allow_html=True)
-            st.markdown('<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>', unsafe_allow_html=True)
-            st.markdown('<tbody>', unsafe_allow_html=True)
+            filtered_table_html = '<div class="table-container"><table>'
+            filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+            filtered_table_html += '<tbody>'
             
             for i, row in filtered_data:
-                row_html = '<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>'
-                st.markdown(row_html, unsafe_allow_html=True)
-
-            st.markdown('</tbody></table></div>', unsafe_allow_html=True)
+                filtered_table_html += '<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>'
+            
+            filtered_table_html += '</tbody></table></div>'
+            st.markdown(filtered_table_html, unsafe_allow_html=True)
 
         else:
             st.warning("Aucun résultat ne correspond aux filtres.")
@@ -306,3 +306,4 @@ if st.button("Editer"):
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
+
