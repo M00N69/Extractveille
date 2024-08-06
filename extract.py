@@ -307,3 +307,4 @@ if st.button("Editer"):
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
+
