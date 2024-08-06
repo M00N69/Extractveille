@@ -211,41 +211,20 @@ if st.button("Editer"):
                 a:hover {
                     text-decoration: underline; /* Soulignement au survol */
                 }
-
-                .analyze-button {
-                    padding: 4px 8px;
-                    color: #fff;
-                    background-color: #3080F8;
-                    border: none;
-                    cursor: pointer;
-                }
-
-                .analyze-button:hover {
-                    background-color: #1A5BB1;
-                }
                 </style>
                 """,
                 unsafe_allow_html=True
             )
 
             # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
-            st.markdown(
-                f"""
-                <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>{'</th><th>'.join(data[0])}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {''.join(f'<tr><td>{"</td><td>".join(row)}<td>{st.button("Analyser", key=f"analyze_{i}", on_click=select_row_for_analysis, args=(i,))}</td></tr>' for i, row in enumerate(data[1:]))}
-                    </tbody>
-                </table>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.markdown('<div class="table-container"><table>', unsafe_allow_html=True)
+            st.markdown('<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>', unsafe_allow_html=True)
+            st.markdown('<tbody>', unsafe_allow_html=True)
+            
+            for i, row in enumerate(data[1:]):
+                st.markdown('<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>', unsafe_allow_html=True)
+
+            st.markdown('</tbody></table></div>', unsafe_allow_html=True)
 
         # Filtrer le tableau par mots-clés, date et rubrique
         filtered_data = []
@@ -269,83 +248,16 @@ if st.button("Editer"):
         if filtered_data:
             st.subheader("Résultats filtrés:")
 
-            # Définir les styles CSS pour le tableau
-            st.markdown(
-                """
-                <style>
-                .table-container {
-                    display: flex;
-                    justify-content: center;
-                    width: 100%;
-                }
-                table {
-                    border-collapse: collapse;
-                    width: 80%;
-                    max-width: 1200px;
-                    border: 1px solid #ddd;
-                    background-color: #29292F; /* Fond sombre */
-                }
-
-                th, td {
-                    border: 1px solid #ddd;
-                    text-align: left;
-                    padding: 8px;
-                    color: #fff; /* Texte blanc */
-                }
-
-                tr:nth-child(even) {
-                    background-color: #333; /* Ligne paire plus foncée */
-                }
-
-                th {
-                    background-color: #333; /* En-têtes plus foncés */
-                    font-weight: bold;
-                }
-
-                a {
-                    color: #3080F8; /* Bleu clair pour les liens */
-                    text-decoration: none; /* Supprimer le soulignement par défaut */
-                }
-
-                a:hover {
-                    text-decoration: underline; /* Soulignement au survol */
-                }
-
-                .analyze-button {
-                    padding: 4px 8px;
-                    color: #fff;
-                    background-color: #3080F8;
-                    border: none;
-                    cursor: pointer;
-                }
-
-                .analyze-button:hover {
-                    background-color: #1A5BB1;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-
-            # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
+            st.markdown('<div class="table-container"><table>', unsafe_allow_html=True)
+            st.markdown('<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>', unsafe_allow_html=True)
+            st.markdown('<tbody>', unsafe_allow_html=True)
+            
             for i, row in filtered_data:
-                st.markdown(
-                    f"""
-                    <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>{'</th><th>'.join(data[0])}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>{"</td><td>".join(row)}<td>{st.button("Analyser", key=f"analyze_filtered_{i}", on_click=select_row_for_analysis, args=(i,))}</td></tr>
-                        </tbody>
-                    </table>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                if st.button(f"Analyser {i}", key=f"analyze_filtered_{i}"):
+                    select_row_for_analysis(i)
+                st.markdown('<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>', unsafe_allow_html=True)
+
+            st.markdown('</tbody></table></div>', unsafe_allow_html=True)
 
         else:
             st.warning("Aucun résultat ne correspond aux filtres.")
@@ -379,5 +291,4 @@ if st.button("Editer"):
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
-
 
