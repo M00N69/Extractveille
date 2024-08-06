@@ -261,6 +261,63 @@ if st.button("Editer"):
         if filtered_data:
             st.subheader("Résultats filtrés:")
 
+            st.markdown(
+                """
+                <style>
+                .table-container {
+                    display: flex;
+                    justify-content: center;
+                    width: 100%;
+                }
+                table {
+                    border-collapse: collapse;
+                    width: 80%;
+                    max-width: 1200px;
+                    border: 1px solid #ddd;
+                    background-color: #29292F; /* Fond sombre */
+                }
+
+                th, td {
+                    border: 1px solid #ddd;
+                    text-align: left;
+                    padding: 8px;
+                    color: #fff; /* Texte blanc */
+                }
+
+                tr:nth-child(even) {
+                    background-color: #333; /* Ligne paire plus foncée */
+                }
+
+                th {
+                    background-color: #333; /* En-têtes plus foncés */
+                    font-weight: bold;
+                }
+
+                a {
+                    color: #3080F8; /* Bleu clair pour les liens */
+                    text-decoration: none; /* Supprimer le soulignement par défaut */
+                }
+
+                a:hover {
+                    text-decoration: underline; /* Soulignement au survol */
+                }
+
+                .analyze-button {
+                    padding: 4px 8px;
+                    color: #fff;
+                    background-color: #3080F8;
+                    border: none;
+                    cursor: pointer;
+                }
+
+                .analyze-button:hover {
+                    background-color: #1A5BB1;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+
             filtered_table_html = '<div class="table-container"><table>'
             filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
             filtered_table_html += '<tbody>'
