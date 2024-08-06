@@ -59,7 +59,7 @@ st.write("Extraction du tableau et des liens du bulletin de veille")
 st.sidebar.title("Filtres")
 
 # Introduction with collapse/expand effect
-with st.sidebar.expander("Introduction"):
+with st.sidebar.expander("INTRODUCTION"):
     st.markdown("""
     Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
     - **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
@@ -166,8 +166,8 @@ if st.button("Editer"):
     data = extraire_texte_et_liens(url)
 
     if data:
-        st.subheader("Tableau extrait:")
-        show_main_table = st.sidebar.checkbox("Afficher le tableau principal", value=True)
+        st.subheader("Tableau Complet de la veille :")
+        show_main_table = st.sidebar.checkbox("Afficher le tableau complet", value=True)
 
         if show_main_table:
             # Définir les styles CSS pour le tableau
