@@ -122,6 +122,7 @@ a:hover {{
     background-color: #3080F8;
     border: none;
     cursor: pointer;
+    text-align: center;
 }}
 
 .analyze-button:hover {{
@@ -263,21 +264,17 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        # Use st.markdown() to display the table in "wide" mode
-        filtered_table_html = '<div class="table-container"><table>'
-        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
-        filtered_table_html += '<tbody>'
+        # Generate the table with integrated buttons
+        table_html = '<div class="table-container"><table>'
+        table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+        table_html += '<tbody>'
         
         for i, row in filtered_data:
-            # Use st.button with a unique key to avoid re-rendering issues
-            if st.button(f"Analyser", key=f"analyze_{i}"):
-                st.session_state.selected_row = i
-                st.session_state.modal_open = True
-
-            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td></td></tr>'
+            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#{i}\'">Analyser</button>'
+            table_html += f'<tr id="{i}"><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
         
-        filtered_table_html += '</tbody></table></div>'
-        st.markdown(filtered_table_html, unsafe_allow_html=True)
+        table_html += '</tbody></table></div>'
+        st.markdown(table_html, unsafe_allow_html=True)
 
         # Check if a row was selected for analysis
         if st.session_state.modal_open and st.session_state.selected_row is not None:
