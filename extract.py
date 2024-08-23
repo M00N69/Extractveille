@@ -237,7 +237,6 @@ def afficher_tableau(data):
         st.warning("Aucun résultat ne correspond aux filtres.")
 
 # Separate page for RASFF data
-# Updated RASFF page function
 def rasff_page():
     st.title("Données RASFF")
 
@@ -247,25 +246,38 @@ def rasff_page():
 
     if data:
         # Extract RASFF Excel files
-        rasff_articles = [row for row in data if 'Alertes' in row[2]]
+        rasff_articles = [row for row in data if 'RASFF' in row[0]]
+        if not rasff_articles:
+            st.warning("Aucun article RASFF trouvé dans les données extraites.")
+            return
+        
         for row in rasff_articles:
+            excel_link = None
             try:
-                excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
-            except IndexError:
-                st.error(f"Erreur lors de l'extraction du lien Excel pour l'article : {row[0]}")
+                # Attempt to find the link in the expected location
+                if "href='" in row[2]:
+                    excel_link = row[2].split("href='")[1].split("'")[0]
+                else:
+                    raise ValueError(f"Le lien n'a pas été trouvé pour l'article : {row[0]}")
+
+            except (IndexError, ValueError) as e:
+                st.error(f"Erreur lors de l'extraction du lien Excel pour l'article : {row[0]} - {e}")
                 continue
 
             try:
-                excel_file = requests.get(excel_link)
-                excel_file.raise_for_status()
+                if excel_link:
+                    excel_file = requests.get(excel_link)
+                    excel_file.raise_for_status()
 
-                # Load Excel data
-                df = pd.read_excel(excel_file.content, engine='openpyxl')
+                    # Load Excel data
+                    df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                st.subheader(f"Données RASFF pour {row[3]}")
+                    st.subheader(f"Données RASFF pour {row[3]}")
 
-                # Display the data in a table
-                st.dataframe(df)
+                    # Display the data in a table
+                    st.dataframe(df)
+                else:
+                    st.error(f"Aucun lien Excel valide pour l'article : {row[0]}")
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
@@ -273,6 +285,7 @@ def rasff_page():
                 st.error(f"Erreur lors du chargement du fichier Excel: {e}")
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
+
 
 
 # Main page button to display extracted data
