@@ -360,12 +360,11 @@ def rasff_page():
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
 
-# Main application flow
-if __name__ == "__main__":
+def main():
     st.title("VEILLE EN IAA")
     st.write("Extraction du tableau et des liens du bulletin de veille")
 
-    # Left sidebar for filters
+    # Sidebar
     st.sidebar.title("Filtres")
 
     # Introduction with collapse/expand effect
@@ -401,12 +400,6 @@ if __name__ == "__main__":
     if st.sidebar.button("Réinitialiser les filtres"):
         st.experimental_rerun()
 
-    # Initialize session state for selected row for analysis
-    if 'selected_row' not in st.session_state:
-        st.session_state.selected_row = None
-    if 'show_summary' not in st.session_state:
-        st.session_state.show_summary = False
-
     # Main button to trigger data extraction and display
     if st.button("Editer"):
         url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
@@ -420,3 +413,55 @@ if __name__ == "__main__":
     # Sidebar button to display RASFF data page
     if st.sidebar.button("Afficher les données RASFF"):
         rasff_page()
+
+def rasff_page():
+    st.title("Données RASFF")
+
+    # Filter by week range
+    semaine_debut, semaine_fin = st.sidebar.slider(
+        "Sélectionnez une plage de semaines:",
+        min_value=1,
+        max_value=52,
+        value=(1, 52)  # Default values
+    )
+
+    url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
+    data = extraire_texte_et_liens(url)
+
+    if data:
+        # Extract RASFF Excel files
+        rasff_articles = [row for row in data if 'Alertes' in row[2]]
+        for row in rasff_articles:
+            excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
+            try:
+                excel_file = requests.get(excel_link)
+                excel_file.raise_for_status()
+
+                # Load Excel data
+                df = pd.read_excel(excel_file.content, engine='openpyxl')
+
+                # Filter data by week
+                if 'Semaine' in df.columns:
+                    df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
+                else:
+                    df_filtered = df  # If no week column, display all data
+
+                st.subheader(f"Données RASFF pour {row[3]}")
+
+                # Configure AgGrid
+                gb = GridOptionsBuilder.from_dataframe(df_filtered)
+                gb.configure_pagination(paginationAutoPageSize=True)
+                gb.configure_side_bar()  # Add sidebar with filter options
+                gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
+                gridOptions = gb.build()
+
+                # Display interactive table
+                AgGrid(df_filtered, gridOptions=gridOptions, enable_enterprise_modules=True)
+
+            except requests.exceptions.RequestException as e:
+                st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
+    else:
+        st.error("Impossible d'extraire le tableau du bulletin.")
+
+if __name__ == "__main__":
+    main()
