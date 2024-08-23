@@ -19,10 +19,9 @@ nltk.download('wordnet')
 # Function to extract text and links from the website
 def extraire_texte_et_liens(url):
     response = requests.get(url)
-    response.raise_for_status()  # Raise an error if the request was unsuccessful
+    response.raise_for_status()
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    # Locate the first table in the HTML
     table = soup.find('table')
     if not table:
         return None
@@ -30,24 +29,22 @@ def extraire_texte_et_liens(url):
     rows = table.find_all('tr')
     data = []
 
-    # Iterate over each row in the table
     for row in rows:
         cols = row.find_all('td')
-        row_data = []
+        if len(cols) < 7:  # Ensure that there are at least 7 columns to process
+            continue
 
-        # Extract text and hyperlinks from each column in the row
-        for col in cols:
-            text = col.text.strip()
-            link = col.find('a')
-            if link:
-                href = link.get('href')
-                if href:
-                    text = f"<a href='{href}'>{text}</a>"
-            row_data.append(text)
+        fiche = cols[0].text.strip()
+        resume_link = cols[1].find('a').get('href') if cols[1].find('a') else ''
+        resume = f"<a href='{resume_link}'>Résumé</a>"
+        publication = cols[2].text.strip()
+        date_publication = cols[3].text.strip()
+        titre = cols[4].text.strip()
+        rubrique_profil = cols[5].text.strip()
 
-        # Only append the row if it has the expected number of columns and data isn't empty
-        if len(row_data) >= 7 and all(row_data):
-            data.append(row_data)
+        # Append the extracted data as a list
+        row_data = [fiche, resume, publication, date_publication, titre, rubrique_profil]
+        data.append(row_data)
 
     return data
 
@@ -258,7 +255,7 @@ def generer_resume(texte, lien_resume):
 def afficher_tableau(data):
     # Filter the table by keywords, date, and category
     filtered_data = []
-    for i, row in enumerate(data[1:]):  # Ignore header
+    for i, row in enumerate(data):  # We no longer ignore the header as it's custom
         texte_article = f"{row[4]} {row[5]}"  # Concatenate Title and Category
         pertinence = calculer_pertinence(texte_article, mots_cles)
 
@@ -277,13 +274,16 @@ def afficher_tableau(data):
 
         for i, (index, row) in enumerate(filtered_data):
             with st.container():
-                cols = st.columns([3, 7, 2])
-                # Date of publication
-                cols[0].markdown(f"**{row[3]}**")
-                # Title and category concatenated
-                cols[1].markdown(f"**{row[4]}** - {row[5]}")
+                cols = st.columns([1, 2, 1, 2, 3, 3])
+                # Display the extracted data
+                cols[0].markdown(f"**{row[0]}**")  # Fiche
+                cols[1].markdown(f"{row[1]}")      # Résumé (link)
+                cols[2].markdown(f"**{row[2]}**")  # Publication
+                cols[3].markdown(f"**{row[3]}**")  # Date
+                cols[4].markdown(f"**{row[4]}**")  # Titre
+                cols[5].markdown(f"{row[5]}")      # Rubrique et profil
                 # Button for analysis
-                analyze_button = cols[2].button("Analyser", key=f"analyze_{i}")
+                analyze_button = cols[0].button("Analyser", key=f"analyze_{i}")
                 
                 # Handle button clicks
                 if analyze_button:
@@ -371,6 +371,7 @@ if st.button("Editer"):
 # Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
+
 
 
 
