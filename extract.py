@@ -294,13 +294,12 @@ def afficher_tableau(data):
 def rasff_page():
     st.title("Données RASFF")
 
-   # Filter by specific weeks
-selected_weeks = st.sidebar.multiselect(
-    "Sélectionnez les semaines:",
-    options=list(range(1, 53)),  # Assuming weeks are from 1 to 52
-    default=[1, 52]  # Default to show all weeks
-)
-
+    # Filter by specific weeks
+    selected_weeks = st.sidebar.multiselect(
+        "Sélectionnez les semaines:",
+        options=list(range(1, 53)),  # Assuming weeks are from 1 to 52
+        default=[1, 52]  # Default to show all weeks
+    )
 
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
@@ -317,12 +316,11 @@ selected_weeks = st.sidebar.multiselect(
                 # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-             # Filter data by selected weeks
-    if 'Semaine' in df.columns:
-        df_filtered = df[df['Semaine'].isin(selected_weeks)]
-    else:
-        df_filtered = df  # If no week column, display all data
-
+                # Filter data by selected weeks
+                if 'Semaine' in df.columns:
+                    df_filtered = df[df['Semaine'].isin(selected_weeks)]
+                else:
+                    df_filtered = df  # If no week column, display all data
 
                 st.subheader(f"Données RASFF pour {row[3]}")
 
@@ -353,3 +351,4 @@ if st.button("Editer"):
 # Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
+
