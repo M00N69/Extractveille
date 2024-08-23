@@ -5,6 +5,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
+from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
 
 # Configure Streamlit to use "wide" mode
@@ -121,9 +122,6 @@ a:hover {{
     background-color: #3080F8;
     border: none;
     cursor: pointer;
-    text-align: center;
-    display: block;
-    width: 100%;
 }}
 
 .analyze-button:hover {{
@@ -174,6 +172,12 @@ rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
 # Button to clear all filters
 if st.sidebar.button("Réinitialiser les filtres"):
     st.experimental_rerun()
+
+# Initialize session state for selected row for analysis
+if 'selected_row' not in st.session_state:
+    st.session_state.selected_row = None
+if 'show_summary' not in st.session_state:
+    st.session_state.show_summary = False
 
 # Function to calculate the relevance of articles
 def calculer_pertinence(texte_article, mots_cles):
@@ -260,39 +264,40 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        table_html = '<div class="table-container"><table>'
-        table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
-        table_html += '<tbody>'
+        # Display the table
+        filtered_table_html = '<div class="table-container"><table>'
+        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+        filtered_table_html += '<tbody>'
         
         for i, row in filtered_data:
-            # Embed the button directly within the HTML
-            button_html = f"""
-            <form action="#" method="post">
-                <input type="hidden" name="row_index" value="{i}">
-                <button class="analyze-button" type="submit">Analyser</button>
-            </form>
-            """
-
-            table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{button_html}</td></tr>'
+            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#analyze_{i}\'">Analyser</button>'
+            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
         
-        table_html += '</tbody></table></div>'
-        st.markdown(table_html, unsafe_allow_html=True)
+        filtered_table_html += '</tbody></table></div>'
+        st.markdown(filtered_table_html, unsafe_allow_html=True)
 
-        # Handle button clicks
-        if "row_index" in st.session_state:
-            row_index = int(st.session_state["row_index"])
-            selected_row = filtered_data[row_index][1]
-            lien_resume = selected_row[1].split("href='")[1].split("'")[0]
+        # Add interaction for analyzing
+        for idx, row in enumerate(filtered_data):
+            if st.button(f"Analyser {row[0]}", key=f"analyze_button_{idx}"):
+                st.session_state.selected_row = idx
+                st.session_state.show_summary = True
+                st.experimental_rerun()
 
-            with st.spinner(f'Generating summary for {selected_row[4]}...'):
+        # Generate summaries with Gemini if a row is selected
+        if st.session_state.show_summary and st.session_state.selected_row is not None:
+            selected_row_data = filtered_data[st.session_state.selected_row][1]
+            st.subheader(f"Analyse de l'article sélectionné: {selected_row_data[4]}")
+            lien_resume = selected_row_data[1].split("href='")[1].split("'")[0]
+            with st.spinner('Analyse en cours...'):
                 try:
-                    resume = generer_resume(f"{selected_row[4]} {selected_row[5]}", lien_resume)
-                    st.expander(f"Summary for {selected_row[4]}").write(resume)
+                    resume = generer_resume(f"{selected_row_data[4]} {selected_row_data[5]}", lien_resume)
+                    st.markdown(f"**Résumé de {selected_row_data[4]}:**\n {resume}")
                 except Exception as e:
                     st.error(f"Erreur lors de l'analyse : {e}")
-
-    else:
-        st.warning("Aucun résultat ne correspond aux filtres.")
+            st.write("---")
+            if st.button("Fermer l'analyse"):
+                st.session_state.show_summary = False
+                st.experimental_rerun()
 
 # Separate page for RASFF data
 def rasff_page():
@@ -344,6 +349,7 @@ def rasff_page():
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
+# Main application flow
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
