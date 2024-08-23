@@ -251,7 +251,7 @@ def afficher_tableau(data):
 
         try:
             date_publication = datetime.strptime(row[3], "%d/%m/%Y").date()
-        except ValueError:
+        except (ValueError, IndexError):
             continue
 
         if date_debut <= date_publication <= date_fin:
@@ -264,6 +264,10 @@ def afficher_tableau(data):
 
         for i, row in enumerate(filtered_data):
             with st.container():
+                if len(row) < 4:
+                    st.error("Données manquantes pour cette ligne.")
+                    continue
+
                 cols = st.columns([3, 7, 2])
                 # Date of publication
                 cols[0].markdown(f"**{row[3]}**")
