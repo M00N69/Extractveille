@@ -274,7 +274,7 @@ def rasff_page():
                 # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                st.subheader(f"Données RASFF pour {row[3]}")
+                st.subheader(f"Données RASFF pour {row[2]}")
 
                 # Configure AgGrid
                 gb = GridOptionsBuilder.from_dataframe(df)
