@@ -5,7 +5,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder, DataReturnMode, JsCode
+from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
 
 # Configure Streamlit to use "wide" mode
@@ -41,81 +41,81 @@ def extraire_texte_et_liens(url):
 # URL du GIF pour l'arrière-plan
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
 
-# Définir le CSS pour l'arrière-plan et les couleurs
+# Define the CSS for background and colors
 css_background = f"""
 <style>
 .stApp {{
     background: url("{gif_url}") no-repeat center center fixed;
     background-size: cover;
-    color: #F0F0F0;  /* Texte clair */
+    color: #F0F0F0;  /* Light text */
 }}
 
-/* Appliquer la couleur de fond à toute la barre latérale */
+/* Apply background color to the entire sidebar */
 [data-testid="stSidebar"] > div:first-child {{
-    background-color: #037283 !important;  /* Bleu-vert */
-    color: #EDF6F9 !important;  /* Texte clair */
+    background-color: #037283 !important;  /* Blue-green */
+    color: #EDF6F9 !important;  /* Light text */
 }}
 
-/* Styliser les entrées, sélections et boutons dans la barre latérale */
+/* Style the inputs, selections, and buttons in the sidebar */
 .stSidebar input, .stSidebar selectbox, .stSidebar button {{
-    color: #EDF6F9 !important;  /* Texte clair */
-    background-color: #83c5be !important;  /* Boutons et inputs en bleu-vert clair */
+    color: #EDF6F9 !important;  /* Light text */
+    background-color: #83c5be !important;  /* Light blue-green for buttons and inputs */
 }}
 
-/* Styliser les boutons globaux */
+/* Style the global buttons */
 button, .stButton > button {{
-    color: #fff !important; /* Texte blanc */
-    background-color: #3080F8 !important; /* Fond bleu */
+    color: #fff !important; /* White text */
+    background-color: #3080F8 !important; /* Blue background */
 }}
 
 button:hover, .stButton > button:hover {{
-    background-color: #1A5BB1 !important; /* Fond bleu plus foncé */
+    background-color: #1A5BB1 !important; /* Darker blue background */
 }}
 
-/* Conteneur du tableau */
+/* Container for the table */
 .table-container {{
     display: flex;
     justify-content: center;
     width: 100%;
 }}
 
-/* Styles pour le tableau */
+/* Styles for the table */
 table {{
     border-collapse: collapse;
-    width: 100%;  /* S'assurer que le tableau utilise toute la largeur disponible */
+    width: 100%;  /* Ensure the table takes up the full width */
     max-width: 100%;
     border: 1px solid #ddd;
-    background-color: #29292F; /* Fond sombre */
+    background-color: #29292F; /* Dark background */
 }}
 
 th, td {{
     border: 1px solid #ddd;
     text-align: left;
     padding: 8px;
-    color: #F0F0F0;  /* Texte clair */
-    word-wrap: break-word;  /* Permettre les retours à la ligne dans les cellules */
-    white-space: normal;  /* Permettre les retours à la ligne */
+    color: #F0F0F0;  /* Light text */
+    word-wrap: break-word;  /* Allow line breaks within cells */
+    white-space: normal;  /* Allow line breaks */
 }}
 
 tr:nth-child(even) {{
-    background-color: #333; /* Ligne paire plus foncée */
+    background-color: #333; /* Darker background for even rows */
 }}
 
 th {{
-    background-color: #333; /* En-têtes plus foncés */
+    background-color: #333; /* Darker background for headers */
     font-weight: bold;
 }}
 
 a {{
-    color: #00d9d9; /* Bleu clair pour les liens */
-    text-decoration: none; /* Supprimer le soulignement par défaut */
+    color: #00d9d9; /* Light blue for links */
+    text-decoration: none; /* Remove default underline */
 }}
 
 a:hover {{
-    text-decoration: underline; /* Soulignement au survol */
+    text-decoration: underline; /* Underline on hover */
 }}
 
-/* Styliser les boutons d'analyse */
+/* Style the analyze buttons */
 .analyze-button {{
     padding: 4px 8px;
     color: #fff;
@@ -130,17 +130,17 @@ a:hover {{
 </style>
 """
 
-# Injecter le CSS dans l'application Streamlit
+# Inject the CSS into the Streamlit app
 st.markdown(css_background, unsafe_allow_html=True)
 
-# Page Streamlit
+# Streamlit Page
 st.title("VEILLE EN IAA")
 st.write("Extraction du tableau et des liens du bulletin de veille")
 
-# Barre latérale gauche pour les filtres
+# Left sidebar for filters
 st.sidebar.title("Filtres")
 
-# Introduction avec effet de collapse/expand
+# Introduction with collapse/expand effect
 with st.sidebar.expander("INTRODUCTION"):
     st.markdown("""
     Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
@@ -150,10 +150,10 @@ with st.sidebar.expander("INTRODUCTION"):
     - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
     """)
 
-# Filtre par mots-clés
+# Filter by keywords
 mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
 
-# Filtre par date avec valeurs par défaut
+# Filter by date with default values
 current_year = datetime.now().year
 default_start_date = datetime(current_year, 1, 1)
 default_end_date = datetime.now()
@@ -161,7 +161,7 @@ default_end_date = datetime.now()
 date_debut = st.sidebar.date_input("Date de début:", default_start_date)
 date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
 
-# Filtre par rubrique
+# Filter by category
 rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
     "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
     "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
@@ -177,7 +177,7 @@ if st.sidebar.button("Réinitialiser les filtres"):
 if 'selected_row' not in st.session_state:
     st.session_state.selected_row = None
 
-# Fonction pour calculer la pertinence des articles
+# Function to calculate the relevance of articles
 def calculer_pertinence(texte_article, mots_cles):
     stop_words = set(stopwords.words('french'))
     lemmatizer = WordNetLemmatizer()
@@ -201,15 +201,14 @@ def calculer_pertinence(texte_article, mots_cles):
 
     return pertinence
 
-# Fonction pour générer des résumés avec Gemini
+# Function to generate summaries with Gemini
 def generer_resume(texte, lien_resume):
-    # Obtenir la clé API Gemini à partir des secrets Streamlit
     gemini_api_key = st.secrets["GEMINI_API_KEY"]
 
-    # Configurer l'API Gemini
+    # Configure the Gemini API
     genai.configure(api_key=gemini_api_key)
 
-    # Définir les paramètres de génération
+    # Define the generation parameters
     generation_config = {
         "temperature": 2,
         "top_p": 0.4,
@@ -217,7 +216,7 @@ def generer_resume(texte, lien_resume):
         "max_output_tokens": 8192,
     }
 
-    # Définir les paramètres de sécurité
+    # Define the safety settings
     safety_settings = [
         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
         {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
@@ -225,7 +224,7 @@ def generer_resume(texte, lien_resume):
         {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
     ]
 
-    # Définir les instructions du système
+    # Define the system instructions
     system_instruction = f"""
     Utilisez le texte du lien "Résumé" disponible dans le tableau pour générer un résumé concis et pertinent de l'article.
     Le lien "Résumé" est : {lien_resume} 
@@ -238,121 +237,102 @@ def generer_resume(texte, lien_resume):
         safety_settings=safety_settings
     )
 
-    # Générer le résumé en utilisant Gemini
+    # Generate the summary using Gemini
     response = model.generate_text(text=texte)
     return response.text
 
-# Fonction pour filtrer et afficher les données avec le bouton "Analyser"
+# Function to display the main table with formatting and analyze button
 def afficher_tableau(data):
-    # Filtrer le tableau par mots-clés, date et rubrique
+    # Filter the table by keywords, date, and category
     filtered_data = []
-    for i, row in enumerate(data[1:]):  # Ignorer l'en-tête
-        # Vérifier si les mots-clés sont présents dans l'article
-        texte_article = f"{row[4]} {row[5]}"  # Concaténer Titre et Rubrique
+    for i, row in enumerate(data[1:]):  # Ignore header
+        texte_article = f"{row[4]} {row[5]}"  # Concatenate Title and Category
         pertinence = calculer_pertinence(texte_article, mots_cles)
 
-        # Vérifier si la date est dans la plage sélectionnée
         try:
             date_publication = datetime.strptime(row[3], "%d/%m/%Y").date()
         except ValueError:
             continue
 
         if date_debut <= date_publication <= date_fin:
-            # Vérifier si la rubrique est sélectionnée
             if not rubriques or any(rubrique in row[5] for rubrique in rubriques):
-                if pertinence > 0.5:  # Seuil de pertinence
+                if pertinence > 0.5:  # Relevance threshold
                     filtered_data.append((i, row))
 
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        # Ajouter un bouton "Analyser" dans la dernière colonne
-        def create_analyze_button(index):
-            return f'<button onclick="window.location.href=\'#analyze_{index}\'" class="analyze-button">Analyser</button>'
-
-        filtered_data_with_button = [
-            row + [create_analyze_button(i)] for i, row in filtered_data
-        ]
+        # Use st.markdown() to display the table in "wide" mode
+        filtered_table_html = '<div class="table-container"><table>'
+        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+        filtered_table_html += '<tbody>'
         
-        df_filtered = pd.DataFrame(
-            filtered_data_with_button, columns=data[0] + ["Action"]
-        )
+        for i, row in filtered_data:
+            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#analyze_{i}\'">Analyser</button>'
+            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
+        
+        filtered_table_html += '</tbody></table></div>'
+        st.markdown(filtered_table_html, unsafe_allow_html=True)
 
-        # Configuration d'AgGrid
-        gb = GridOptionsBuilder.from_dataframe(df_filtered)
-        gb.configure_pagination(paginationAutoPageSize=True)
-        gb.configure_side_bar()  # Ajouter la barre latérale avec les options de filtre
-        gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
-        gridOptions = gb.build()
-
-        # Affichage du tableau interactif
-        grid_response = AgGrid(
-            df_filtered,
-            gridOptions=gridOptions,
-            enable_enterprise_modules=True,
-            allow_unsafe_jscode=True,
-        )
-
-        # Générer des résumés avec Gemini si une ligne est sélectionnée
-        selected = grid_response['selected_rows']
-        if selected:
-            st.subheader("Analyse de l'article sélectionné:")
-            selected_row = selected[0]
-            lien_resume = selected_row.get(data[1])  # Extraire le lien "Résumé"
-            lien_resume = lien_resume.split("href='")[1].split("'")[0]
-            with st.spinner('Analyse en cours...'):
-                try:
-                    resume = generer_resume(f"{selected_row[4]} {selected_row[5]}", lien_resume)
-                    st.markdown(f"**Résumé de {selected_row[4]}:**\n {resume}")
-                except Exception as e:
-                    st.error(f"Erreur lors de l'analyse : {e}")
-            st.write("---")
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
+    
+    # Generate summaries with Gemini if a row is selected
+    if st.session_state.selected_row is not None:
+        row_index, row = filtered_data[st.session_state.selected_row]
+        st.subheader("Analyse de l'article sélectionné:")
+        lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
+        with st.spinner('Analyse en cours...'):
+            try:
+                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
+                st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
+            except Exception as e:
+                st.error(f"Erreur lors de l'analyse : {e}")
+        st.write("---")
 
-# Page séparée pour les données RASFF
+# Separate page for RASFF data
 def rasff_page():
     st.title("Données RASFF")
 
-    # Filtre par plage de semaines
+    # Filter by week range
     semaine_debut, semaine_fin = st.sidebar.slider(
         "Sélectionnez une plage de semaines:",
         min_value=1,
         max_value=52,
-        value=(1, 52)  # Valeurs par défaut
+        value=(1, 52)  # Default values
     )
 
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
 
     if data:
-        # Extraire les fichiers Excel RASFF
+        # Extract RASFF Excel files
         rasff_articles = [row for row in data if 'Alertes' in row[2]]
         for row in rasff_articles:
-            excel_link = row[2].split("href='")[1].split("'")[0]  # Extraire le lien Excel
+            excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
             try:
                 excel_file = requests.get(excel_link)
                 excel_file.raise_for_status()
 
-                # Charger les données Excel
+                # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                # Filtrer les données par semaine
+                # Filter data by week
                 if 'Semaine' in df.columns:
                     df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
                 else:
-                    df_filtered = df  # Si pas de colonne semaine, afficher tout
+                    df_filtered = df  # If no week column, display all data
 
                 st.subheader(f"Données RASFF pour {row[3]}")
 
-                # Configuration d'AgGrid
+                # Configure AgGrid
                 gb = GridOptionsBuilder.from_dataframe(df_filtered)
                 gb.configure_pagination(paginationAutoPageSize=True)
-                gb.configure_side_bar()  # Ajouter la barre latérale avec les options de filtre
+                gb.configure_side_bar()  # Add sidebar with filter options
                 gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
                 gridOptions = gb.build()
 
-                # Affichage du tableau interactif
+                # Display interactive table
                 AgGrid(df_filtered, gridOptions=gridOptions, enable_enterprise_modules=True)
 
             except requests.exceptions.RequestException as e:
@@ -369,6 +349,6 @@ if st.button("Editer"):
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
-# Barre latérale pour afficher la page RASFF
+# Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
