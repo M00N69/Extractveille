@@ -246,7 +246,7 @@ def rasff_page():
 
     if data:
         # Extract RASFF Excel files
-        rasff_articles = [row for row in data if 'Alertes' in row[2]]
+        rasff_articles = [row for row in data if 'RASFF' in row[0]]
         if not rasff_articles:
             st.warning("Aucun article RASFF trouvé dans les données extraites.")
             return
@@ -256,13 +256,19 @@ def rasff_page():
                 # Debugging: Print out the row to understand its structure
                 st.write(f"Debugging: Current row data - {row}")
 
-                # Attempt to extract the link from the third column (Publication)
+                # Check if there is any href link in the publication column
                 if "href='" in row[2]:
                     excel_link = row[2].split("href='")[1].split("'")[0]
+                    
+                    if not excel_link:  # If the link is empty
+                        st.error(f"Aucun lien Excel valide pour l'article : {row[0]}")
+                        continue
+
                 else:
                     st.error(f"Le lien n'a pas été trouvé dans la publication pour l'article : {row[0]}")
                     continue
 
+                # Try to download and read the Excel file
                 excel_file = requests.get(excel_link)
                 excel_file.raise_for_status()
 
@@ -281,8 +287,6 @@ def rasff_page():
 
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
-
-
 
 
 # Main page button to display extracted data
