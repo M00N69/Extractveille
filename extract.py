@@ -97,6 +97,16 @@ th, td {{
     white-space: normal;  /* Allow line breaks */
 }}
 
+/* Adjust column widths */
+td:nth-child(1) {{ width: 10%; }}  /* Fiche */
+td:nth-child(2) {{ width: 8%; }}   /* Résumé */
+td:nth-child(3) {{ width: 8%; }}   /* Publication */
+td:nth-child(4) {{ width: 10%; }}  /* Date */
+td:nth-child(5) {{ width: 22%; }}  /* Titre */
+td:nth-child(6) {{ width: 25%; }}  /* Rubrique et profil */
+td:nth-child(7) {{ width: 7%; }}   /* Bull. */
+td:nth-child(8) {{ width: 10%; }}  /* Action */
+
 tr:nth-child(even) {{
     background-color: #333; /* Darker background for even rows */
 }}
@@ -122,7 +132,6 @@ a:hover {{
     background-color: #3080F8;
     border: none;
     cursor: pointer;
-    text-align: center;
 }}
 
 .analyze-button:hover {{
@@ -177,8 +186,6 @@ if st.sidebar.button("Réinitialiser les filtres"):
 # Initialize session state for selected row for analysis
 if 'selected_row' not in st.session_state:
     st.session_state.selected_row = None
-if 'show_summary' not in st.session_state:
-    st.session_state.show_summary = False
 
 # Function to calculate the relevance of articles
 def calculer_pertinence(texte_article, mots_cles):
@@ -265,38 +272,33 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        # Display the table
+        # Use st.markdown() to display the table in "wide" mode
         filtered_table_html = '<div class="table-container"><table>'
         filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
         filtered_table_html += '<tbody>'
         
         for i, row in filtered_data:
-            with st.container():
-                cols = st.columns(len(row) + 1)  # Create columns
-                for j, cell in enumerate(row):
-                    cols[j].markdown(cell, unsafe_allow_html=True)
-                if cols[-1].button("Analyser", key=f"analyze_button_{i}"):
-                    st.session_state.selected_row = i
-                    st.session_state.show_summary = True
-                    st.experimental_rerun()
+            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#analyze_{i}\'">Analyser</button>'
+            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
         
+        filtered_table_html += '</tbody></table></div>'
         st.markdown(filtered_table_html, unsafe_allow_html=True)
 
-        # Generate summaries with Gemini if a row is selected
-        if st.session_state.show_summary and st.session_state.selected_row is not None:
-            selected_row_data = filtered_data[st.session_state.selected_row][1]
-            st.subheader(f"Analyse de l'article sélectionné: {selected_row_data[4]}")
-            lien_resume = selected_row_data[1].split("href='")[1].split("'")[0]
-            with st.spinner('Analyse en cours...'):
-                try:
-                    resume = generer_resume(f"{selected_row_data[4]} {selected_row_data[5]}", lien_resume)
-                    st.markdown(f"**Résumé de {selected_row_data[4]}:**\n {resume}")
-                except Exception as e:
-                    st.error(f"Erreur lors de l'analyse : {e}")
-            st.write("---")
-            if st.button("Fermer l'analyse"):
-                st.session_state.show_summary = False
-                st.experimental_rerun()
+    else:
+        st.warning("Aucun résultat ne correspond aux filtres.")
+    
+    # Generate summaries with Gemini if a row is selected
+    if st.session_state.selected_row is not None:
+        row_index, row = filtered_data[st.session_state.selected_row]
+        st.subheader("Analyse de l'article sélectionné:")
+        lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
+        with st.spinner('Analyse en cours...'):
+            try:
+                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
+                st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
+            except Exception as e:
+                st.error(f"Erreur lors de l'analyse : {e}")
+        st.write("---")
 
 # Separate page for RASFF data
 def rasff_page():
@@ -348,7 +350,6 @@ def rasff_page():
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
-# Main application flow
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
