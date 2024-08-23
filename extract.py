@@ -52,29 +52,37 @@ css_background = f"""
     background-size: cover;
     color: #F0F0F0;  /* Texte clair */
 }}
-.stSidebar {{
+
+/* Appliquer la couleur de fond à toute la barre latérale */
+[data-testid="stSidebar"] > div:first-child {{
     background-color: #037283 !important;  /* Bleu-vert */
-    color: #EDF6F9;  /* Texte clair */
+    color: #EDF6F9 !important;  /* Texte clair */
 }}
-.stSidebar .sidebar-content {{
-    color: #EDF6F9;  /* Texte clair */
-}}
+
+/* Styliser les entrées, sélections et boutons dans la barre latérale */
 .stSidebar input, .stSidebar selectbox, .stSidebar button {{
-    color: #EDF6F9;  /* Texte clair */
-    background-color: #83c5be;  /* Boutons et inputs en bleu-vert clair */
+    color: #EDF6F9 !important;  /* Texte clair */
+    background-color: #83c5be !important;  /* Boutons et inputs en bleu-vert clair */
 }}
+
+/* Styliser les boutons globaux */
 button, .stButton > button {{
     color: #fff !important; /* Texte blanc */
     background-color: #3080F8 !important; /* Fond bleu */
 }}
+
 button:hover, .stButton > button:hover {{
     background-color: #1A5BB1 !important; /* Fond bleu plus foncé */
 }}
+
+/* Conteneur du tableau */
 .table-container {{
     display: flex;
     justify-content: center;
     width: 100%;
 }}
+
+/* Styles pour le tableau */
 table {{
     border-collapse: collapse;
     width: 100%;  /* S'assurer que le tableau utilise toute la largeur disponible */
@@ -110,6 +118,7 @@ a:hover {{
     text-decoration: underline; /* Soulignement au survol */
 }}
 
+/* Styliser les boutons d'analyse */
 .analyze-button {{
     padding: 4px 8px;
     color: #fff;
@@ -126,6 +135,7 @@ a:hover {{
 
 # Injecter le CSS dans l'application Streamlit
 st.markdown(css_background, unsafe_allow_html=True)
+
 
 # Page Streamlit
 st.title("VEILLE EN IAA")
