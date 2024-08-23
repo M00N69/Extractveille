@@ -253,10 +253,9 @@ def generer_resume(texte, lien_resume):
 
 # Function to display the main table with formatting and analyze button
 def afficher_tableau(data):
-    # Filter the table by keywords, date, and category
     filtered_data = []
     for i, row in enumerate(data):
-        texte_article = f"{row[4]} {row[5]}"  # Concatenate Title and Category
+        texte_article = f"{row[4]} {row[5]}"  # Concaténation du titre et de la rubrique
         pertinence = calculer_pertinence(texte_article, mots_cles)
 
         try:
@@ -266,7 +265,7 @@ def afficher_tableau(data):
 
         if date_debut <= date_publication <= date_fin:
             if not rubriques or any(rubrique in row[5] for rubrique in rubriques):
-                if pertinence > 0.5:  # Relevance threshold
+                if pertinence > 0.5:  # Seuil de pertinence
                     filtered_data.append((i, row))
 
     if filtered_data:
@@ -276,46 +275,32 @@ def afficher_tableau(data):
             with st.container():
                 cols = st.columns([1, 2, 1, 2, 3, 3])
 
-                # Display the extracted data
+                # Affichage des données extraites
                 cols[0].markdown(f"**{row[0]}**")  # Fiche
-
-                # Create a clickable link for Résumé
                 lien_resume = row[1].split("href='")[1].split("'")[0]
                 resume_link = f"[Résumé]({lien_resume})"
-                cols[1].markdown(resume_link, unsafe_allow_html=True)  # Résumé (clickable link)
+                cols[1].markdown(resume_link, unsafe_allow_html=True)
+                cols[2].markdown(f"**{row[2]}**")
+                cols[3].markdown(f"**{row[3]}**")
+                cols[4].markdown(f"**{row[4]}**")
+                cols[5].markdown(f"{row[5]}")
 
-                cols[2].markdown(f"**{row[2]}**")  # Publication
-                cols[3].markdown(f"**{row[3]}**")  # Date
-                cols[4].markdown(f"**{row[4]}**")  # Titre
-                cols[5].markdown(f"{row[5]}")      # Rubrique et profil
-
-                # Button for analysis
+                # Bouton pour l'analyse
                 analyze_button = cols[0].button("Analyser", key=f"analyze_{i}")
                 
-                # Handle button clicks
+                # Si le bouton "Analyser" est cliqué, afficher le résumé dans un expander
                 if analyze_button:
-                    # Store the selected row's data in session state
-                    st.session_state.selected_row = i
-                    st.session_state.selected_row_data = row
-                    st.session_state.show_summary = True
-
-        # If a row has been selected, display the analysis summary
-        if 'show_summary' in st.session_state and st.session_state.show_summary:
-            st.subheader("Analyse de l'article sélectionné:")
-            selected_row_data = st.session_state.selected_row_data
-            lien_resume = selected_row_data[1].split("href='")[1].split("'")[0]
-            with st.spinner('Analyse en cours...'):
-                try:
-                    resume = generer_resume(f"{selected_row_data[4]} {selected_row_data[5]}", lien_resume)
-                    st.markdown(f"**Résumé de {selected_row_data[4]}:**\n {resume}")
-                except Exception as e:
-                    st.error(f"Erreur lors de l'analyse : {e}")
-            st.write("---")
-            st.session_state.show_summary = False
+                    summary_expander = st.expander(f"Résumé pour {row[4]}")
+                    with summary_expander:
+                        with st.spinner('Analyse en cours...'):
+                            try:
+                                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
+                                st.write(resume)
+                            except Exception as e:
+                                st.error(f"Erreur lors de l'analyse : {e}")
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
-
 
 # Separate page for RASFF data
 def rasff_page():
