@@ -123,34 +123,44 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
+        # Use st.markdown() to display the table in "wide" mode
+        filtered_table_html = '<div class="table-container"><table>'
+        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+        filtered_table_html += '<tbody>'
+        
         for i, row in filtered_data:
-            with st.container():
-                cols = st.columns([2, 6, 2, 2, 1])
-                cols[0].markdown(f"**{row[0]}**")  # Fiche
-                cols[1].markdown(f"**{row[4]}**")  # Titre
-                cols[2].markdown(f"**{row[3]}**")  # Date
-                cols[3].markdown(f"**{row[5]}**")  # Rubrique et profil
-                analyze_button = cols[4].button("Analyser", key=f"analyze_{i}")
-
-                if analyze_button:
-                    # Trigger summary generation
-                    lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
-                    summary = generer_resume(f"{row[4]} {row[5]}", lien_resume)
-                    st.expander(f"Résumé pour {row[4]}").write(summary)
+            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#analyze_{i}\'">Analyser</button>'
+            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
+        
+        filtered_table_html += '</tbody></table></div>'
+        st.markdown(filtered_table_html, unsafe_allow_html=True)
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
+    
+    # Generate summaries with Gemini if a row is selected
+    if st.session_state.selected_row is not None:
+        row_index, row = filtered_data[st.session_state.selected_row]
+        st.subheader("Analyse de l'article sélectionné:")
+        lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
+        with st.spinner('Analyse en cours...'):
+            try:
+                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
+                st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
+            except Exception as e:
+                st.error(f"Erreur lors de l'analyse : {e}")
+        st.write("---")
 
 # Separate page for RASFF data
 def rasff_page():
     st.title("Données RASFF")
 
-    # Filter by week using multiselect
-    semaines_disponibles = list(range(1, 53))  # Example list of weeks, 1 to 52
-    semaines_selectionnees = st.sidebar.multiselect(
-        "Sélectionnez les semaines:",
-        options=semaines_disponibles,
-        default=semaines_disponibles  # Select all weeks by default
+    # Filter by week range
+    semaine_debut, semaine_fin = st.sidebar.slider(
+        "Sélectionnez une plage de semaines:",
+        min_value=1,
+        max_value=52,
+        value=(1, 52)  # Default values
     )
 
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
@@ -168,9 +178,9 @@ def rasff_page():
                 # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                # Filter data by selected weeks
+                # Filter data by week
                 if 'Semaine' in df.columns:
-                    df_filtered = df[df['Semaine'].isin(semaines_selectionnees)]
+                    df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
                 else:
                     df_filtered = df  # If no week column, display all data
 
@@ -225,3 +235,94 @@ if st.button("Editer"):
 
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
+
+# Inject the CSS into the Streamlit app
+css_background = f"""
+<style>
+.stApp {{
+    background: url("{gif_url}") no-repeat center center fixed;
+    background-size: cover;
+    color: #F0F0F0;  /* Light text */
+}}
+
+/* Apply background color to the entire sidebar */
+[data-testid="stSidebar"] > div:first-child {{
+    background-color: #037283 !important;  /* Blue-green */
+    color: #EDF6F9 !important;  /* Light text */
+}}
+
+/* Style the inputs, selections, and buttons in the sidebar */
+.stSidebar input, .stSidebar selectbox, .stSidebar button {{
+    color: #EDF6F9 !important;  /* Light text */
+    background-color: #83c5be !important;  /* Light blue-green for buttons and inputs */
+}}
+
+/* Style the global buttons */
+button, .stButton > button {{
+    color: #fff !important; /* White text */
+    background-color: #3080F8 !important; /* Blue background */
+}}
+
+button:hover, .stButton > button:hover {{
+    background-color: #1A5BB1 !important; /* Darker blue background */
+}}
+
+/* Container for the table */
+.table-container {{
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}}
+
+/* Styles for the table */
+table {{
+    border-collapse: collapse;
+    width: 100%;  /* Ensure the table takes up the full width */
+    max-width: 100%;
+    border: 1px solid #ddd;
+    background-color: #29292F; /* Dark background */
+}}
+
+th, td {{
+    border: 1px solid #ddd;
+    text-align: left;
+    padding: 8px;
+    color: #F0F0F0;  /* Light text */
+    word-wrap: break-word;  /* Allow line breaks within cells */
+    white-space: normal;  /* Allow line breaks */
+}}
+
+tr:nth-child(even) {{
+    background-color: #333; /* Darker background for even rows */
+}}
+
+th {{
+    background-color: #333; /* Darker background for headers */
+    font-weight: bold;
+}}
+
+a {{
+    color: #00d9d9; /* Light blue for links */
+    text-decoration: none; /* Remove default underline */
+}}
+
+a:hover {{
+    text-decoration: underline; /* Underline on hover */
+}}
+
+/* Style the analyze buttons */
+.analyze-button {{
+    padding: 4px 8px;
+    color: #fff;
+    background-color: #3080F8;
+    border: none;
+    cursor: pointer;
+}}
+
+.analyze-button:hover {{
+    background-color: #1A5BB1;
+}}
+</style>
+"""
+
+st.markdown(css_background, unsafe_allow_html=True)
