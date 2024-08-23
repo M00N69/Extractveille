@@ -262,33 +262,39 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        # Use st.markdown() to display the table in "wide" mode
-        filtered_table_html = '<div class="table-container"><table>'
-        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
-        filtered_table_html += '<tbody>'
-        
-        for i, row in filtered_data:
-            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#analyze_{i}\'">Analyser</button>'
-            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
-        
-        filtered_table_html += '</tbody></table></div>'
-        st.markdown(filtered_table_html, unsafe_allow_html=True)
+        for i, row in enumerate(filtered_data):
+            with st.container():
+                cols = st.columns([3, 7, 2])
+                # Date of publication
+                cols[0].markdown(f"**{row[3]}**")
+                # Title and category concatenated
+                cols[1].markdown(f"**{row[4]}** - {row[5]}")
+                # Button for analysis
+                analyze_button = cols[2].button("Analyser", key=f"analyze_{i}")
+                
+                # Handle button clicks
+                if analyze_button:
+                    # Store the selected row's data in session state
+                    st.session_state.selected_row = i
+                    st.session_state.selected_row_data = row
+                    st.session_state.show_summary = True
+
+        # If a row has been selected, display the analysis summary
+        if 'show_summary' in st.session_state and st.session_state.show_summary:
+            st.subheader("Analyse de l'article sélectionné:")
+            selected_row_data = st.session_state.selected_row_data
+            lien_resume = selected_row_data[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
+            with st.spinner('Analyse en cours...'):
+                try:
+                    resume = generer_resume(f"{selected_row_data[4]} {selected_row_data[5]}", lien_resume)
+                    st.markdown(f"**Résumé de {selected_row_data[4]}:**\n {resume}")
+                except Exception as e:
+                    st.error(f"Erreur lors de l'analyse : {e}")
+            st.write("---")
+            st.session_state.show_summary = False
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
-    
-    # Generate summaries with Gemini if a row is selected
-    if st.session_state.selected_row is not None:
-        row_index, row = filtered_data[st.session_state.selected_row]
-        st.subheader("Analyse de l'article sélectionné:")
-        lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
-        with st.spinner('Analyse en cours...'):
-            try:
-                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
-                st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
-            except Exception as e:
-                st.error(f"Erreur lors de l'analyse : {e}")
-        st.write("---")
 
 # Separate page for RASFF data
 def rasff_page():
@@ -351,4 +357,5 @@ if st.button("Editer"):
 # Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
+
 
