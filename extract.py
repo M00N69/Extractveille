@@ -174,11 +174,6 @@ rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
 if st.sidebar.button("Réinitialiser les filtres"):
     st.experimental_rerun()
 
-# Initialize session state for selected row for analysis
-if 'selected_row' not in st.session_state:
-    st.session_state.selected_row = None
-    st.session_state.modal_open = False
-
 # Function to calculate the relevance of articles
 def calculer_pertinence(texte_article, mots_cles):
     stop_words = set(stopwords.words('french'))
@@ -270,31 +265,23 @@ def afficher_tableau(data):
         table_html += '<tbody>'
         
         for i, row in filtered_data:
-            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#{i}\'">Analyser</button>'
-            table_html += f'<tr id="{i}"><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
+            # Create a button and directly trigger the summary generation and display
+            action_button = st.button(f"Analyser", key=f"analyze_{i}")
+
+            table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td></td></tr>'
+            
+            # Display the summary if the button is clicked
+            if action_button:
+                with st.spinner(f'Generating summary for {row[4]}...'):
+                    lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
+                    try:
+                        resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
+                        st.expander(f"Summary for {row[4]}").write(resume)
+                    except Exception as e:
+                        st.error(f"Erreur lors de l'analyse : {e}")
         
         table_html += '</tbody></table></div>'
         st.markdown(table_html, unsafe_allow_html=True)
-
-        # Check if a row was selected for analysis
-        if st.session_state.modal_open and st.session_state.selected_row is not None:
-            row_index = int(st.session_state.selected_row)
-            selected_row = filtered_data[row_index][1]  # The selected row's data
-
-            lien_resume = selected_row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
-
-            # Open the modal and display the summary
-            with st.expander(f"Analyse de l'article sélectionné - {selected_row[4]}", expanded=True):
-                with st.spinner('Analyse en cours...'):
-                    try:
-                        resume = generer_resume(f"{selected_row[4]} {selected_row[5]}", lien_resume)
-                        st.markdown(f"**Résumé de {selected_row[4]}:**\n {resume}")
-                    except Exception as e:
-                        st.error(f"Erreur lors de l'analyse : {e}")
-
-                # Button to close the modal
-                if st.button("Fermer"):
-                    st.session_state.modal_open = False
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
