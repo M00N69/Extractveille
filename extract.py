@@ -237,9 +237,16 @@ def afficher_tableau(data):
         st.warning("Aucun résultat ne correspond aux filtres.")
 
 # Separate page for RASFF data
-# Separate page for RASFF data
 def rasff_page():
     st.title("Données RASFF")
+
+    # Filter by week range
+    semaine_debut, semaine_fin = st.sidebar.slider(
+        "Sélectionnez une plage de semaines:",
+        min_value=1,
+        max_value=52,
+        value=(1, 52)  # Default values
+    )
 
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
@@ -248,34 +255,34 @@ def rasff_page():
         # Extract RASFF Excel files
         rasff_articles = [row for row in data if 'Alertes' in row[2]]
         for row in rasff_articles:
+            excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
             try:
-                # Extract Excel link from the third column
-                excel_link = row[2].split("href='")[1].split("'")[0]
-
-                # Download the Excel file
                 excel_file = requests.get(excel_link)
                 excel_file.raise_for_status()
 
-                # Load the Excel data into a DataFrame
+                # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
+
+                # Filter data by week
+                if 'Semaine' in df.columns:
+                    df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
+                else:
+                    df_filtered = df  # If no week column, display all data
 
                 st.subheader(f"Données RASFF pour {row[3]}")
 
-                # Configure AgGrid to display the DataFrame
-                gb = GridOptionsBuilder.from_dataframe(df)
+                # Configure AgGrid
+                gb = GridOptionsBuilder.from_dataframe(df_filtered)
                 gb.configure_pagination(paginationAutoPageSize=True)
                 gb.configure_side_bar()  # Add sidebar with filter options
                 gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
                 gridOptions = gb.build()
 
-                # Display the DataFrame in an interactive AgGrid table
-                AgGrid(df, gridOptions=gridOptions, enable_enterprise_modules=True)
+                # Display interactive table
+                AgGrid(df_filtered, gridOptions=gridOptions, enable_enterprise_modules=True)
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
-            except Exception as e:
-                st.error(f"Erreur lors du chargement du fichier Excel: {e}")
-
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
