@@ -5,7 +5,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
 
 # Configure Streamlit to use "wide" mode
@@ -47,98 +46,6 @@ def extraire_texte_et_liens(url):
         data.append(row_data)
 
     return data
-
-# URL of the GIF for the background
-gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
-
-# Define the CSS for background and colors
-css_background = f"""
-<style>
-.stApp {{
-    background: url("{gif_url}") no-repeat center center fixed;
-    background-size: cover;
-    color: #F0F0F0;  /* Light text */
-}}
-
-/* Apply background color to the entire sidebar */
-[data-testid="stSidebar"] > div:first-child {{
-    background-color: #037283 !important;  /* Blue-green */
-    color: #EDF6F9 !important;  /* Light text */
-}}
-
-/* Style the inputs, selections, and buttons in the sidebar */
-.stSidebar input, .stSidebar selectbox, .stSidebar button {{
-    color: #EDF6F9 !important;  /* Light text */
-    background-color: #83c5be !important;  /* Light blue-green for buttons and inputs */
-}}
-
-/* Style the global buttons */
-button, .stButton > button {{
-    color: #fff !important; /* White text */
-    background-color: #3080F8 !important; /* Blue background */
-}}
-
-button:hover, .stButton > button:hover {{
-    background-color: #1A5BB1 !important; /* Darker blue background */
-}}
-
-/* Container for the table */
-.table-container {{
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}}
-
-/* Styles for the table */
-table {{
-    border-collapse: collapse;
-    width: 100%;  /* Ensure the table takes up the full width */
-    max-width: 100%;
-    border: 1px solid #ddd;
-    background-color: #29292F; /* Dark background */
-}}
-
-th, td {{
-    border: 1px solid #ddd;
-    text-align: left;
-    padding: 8px;
-    color: #F0F0F0;  /* Light text */
-    word-wrap: break-word;  /* Allow line breaks within cells */
-    white-space: normal;  /* Allow line breaks */
-}}
-
-tr:nth-child(even) {{
-    background-color: #333; /* Darker background for even rows */
-}}
-
-th {{
-    background-color: #333; /* Darker background for headers */
-    font-weight: bold;
-}}
-
-a {{
-    color: #00d9d9; /* Light blue for links */
-    text-decoration: none; /* Remove default underline */
-}}
-
-a:hover {{
-    text-decoration: underline; /* Underline on hover */
-}}
-
-/* Style the analyze buttons */
-.analyze-button {{
-    padding: 4px 8px;
-    color: #fff;
-    background-color: #3080F8;
-    border: none;
-    cursor: pointer;
-}}
-
-.analyze-button:hover {{
-    background-color: #1A5BB1;
-}}
-</style>
-"""
 
 # Inject the CSS into the Streamlit app
 st.markdown(css_background, unsafe_allow_html=True)
@@ -211,47 +118,7 @@ def calculer_pertinence(texte_article, mots_cles):
 
     return pertinence
 
-# Function to generate summaries with Gemini
-def generer_resume(texte, lien_resume):
-    gemini_api_key = st.secrets["GEMINI_API_KEY"]
-
-    # Configure the Gemini API
-    genai.configure(api_key=gemini_api_key)
-
-    # Define the generation parameters
-    generation_config = {
-        "temperature": 2,
-        "top_p": 0.4,
-        "top_k": 32,
-        "max_output_tokens": 8192,
-    }
-
-    # Define the safety settings
-    safety_settings = [
-        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-    ]
-
-    # Define the system instructions
-    system_instruction = f"""
-    Utilisez le texte du lien "Résumé" disponible dans le tableau pour générer un résumé concis et pertinent de l'article.
-    Le lien "Résumé" est : {lien_resume}
-    """
-
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-pro-latest",
-        generation_config=generation_config,
-        system_instruction=system_instruction,
-        safety_settings=safety_settings
-    )
-
-    # Generate the summary using Gemini
-    response = model.generate_text(text=texte)
-    return response.text
-
-# Function to display the main table with formatting and analyze button
+# Function to display the main table with formatting
 def afficher_tableau(data):
     filtered_data = []
     for i, row in enumerate(data):
@@ -273,9 +140,10 @@ def afficher_tableau(data):
 
         for i, (index, row) in enumerate(filtered_data):
             with st.container():
-                cols = st.columns([1, 2, 1, 2, 3, 3])
+                # Adjust column widths: 1, 2, 1, 1, 4, 4
+                cols = st.columns([1, 2, 1, 1, 4, 4])
 
-                # Affichage des données extraites
+                # Display the extracted data
                 cols[0].markdown(f"**{row[0]}**")  # Fiche
                 lien_resume = row[1].split("href='")[1].split("'")[0]
                 resume_link = f"[Résumé]({lien_resume})"
@@ -284,20 +152,6 @@ def afficher_tableau(data):
                 cols[3].markdown(f"**{row[3]}**")
                 cols[4].markdown(f"**{row[4]}**")
                 cols[5].markdown(f"{row[5]}")
-
-                # Bouton pour l'analyse
-                analyze_button = cols[0].button("Analyser", key=f"analyze_{i}")
-                
-                # Si le bouton "Analyser" est cliqué, afficher le résumé dans un expander
-                if analyze_button:
-                    summary_expander = st.expander(f"Résumé pour {row[4]}")
-                    with summary_expander:
-                        with st.spinner('Analyse en cours...'):
-                            try:
-                                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
-                                st.write(resume)
-                            except Exception as e:
-                                st.error(f"Erreur lors de l'analyse : {e}")
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
@@ -364,7 +218,3 @@ if st.button("Editer"):
 # Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
-
-
-
-
