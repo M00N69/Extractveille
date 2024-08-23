@@ -19,9 +19,10 @@ nltk.download('wordnet')
 # Function to extract text and links from the website
 def extraire_texte_et_liens(url):
     response = requests.get(url)
-    response.raise_for_status()
+    response.raise_for_status()  # Raise an error if the request was unsuccessful
     soup = BeautifulSoup(response.content, 'html.parser')
 
+    # Locate the first table in the HTML
     table = soup.find('table')
     if not table:
         return None
@@ -29,12 +30,12 @@ def extraire_texte_et_liens(url):
     rows = table.find_all('tr')
     data = []
 
+    # Iterate over each row in the table
     for row in rows:
         cols = row.find_all('td')
-        if len(cols) < 7:
-            continue  # Skip rows that do not have enough columns
-        
         row_data = []
+
+        # Extract text and hyperlinks from each column in the row
         for col in cols:
             text = col.text.strip()
             link = col.find('a')
@@ -44,12 +45,13 @@ def extraire_texte_et_liens(url):
                     text = f"<a href='{href}'>{text}</a>"
             row_data.append(text)
 
-        if len(row_data) >= 7:  # Ensure the row has the required columns
+        # Only append the row if it has the expected number of columns and data isn't empty
+        if len(row_data) >= 7 and all(row_data):
             data.append(row_data)
 
     return data
 
-# URL du GIF pour l'arrière-plan
+# URL of the GIF for the background
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
 
 # Define the CSS for background and colors
@@ -238,9 +240,7 @@ def generer_resume(texte, lien_resume):
     # Define the system instructions
     system_instruction = f"""
     Utilisez le texte du lien "Résumé" disponible dans le tableau pour générer un résumé concis et pertinent de l'article.
-    Le lien "Résumé" est : {lien_resume}Voici la suite et la fin du code, accompagnée d'explications détaillées.
-
-```python
+    Le lien "Résumé" est : {lien_resume}
     """
 
     model = genai.GenerativeModel(
@@ -275,12 +275,8 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        for i, row in enumerate(filtered_data):
+        for i, (index, row) in enumerate(filtered_data):
             with st.container():
-                if len(row) < 7:
-                    st.error(f"Données manquantes pour cette ligne : {row}")
-                    continue
-
                 cols = st.columns([3, 7, 2])
                 # Date of publication
                 cols[0].markdown(f"**{row[3]}**")
@@ -362,6 +358,7 @@ def rasff_page():
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
+# Main page button to display extracted data
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
