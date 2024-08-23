@@ -246,7 +246,7 @@ def rasff_page():
 
     if data:
         # Extract RASFF Excel files
-        rasff_articles = [row for row in data if 'RASFF' in row[0]]
+        rasff_articles = [row for row in data if 'RASFF' in row[0]]  # Filter for RASFF articles
         if not rasff_articles:
             st.warning("Aucun article RASFF trouvé dans les données extraites.")
             return
@@ -254,7 +254,7 @@ def rasff_page():
         for row in rasff_articles:
             excel_link = None
             try:
-                # Attempt to find the link in the expected location
+                # Attempt to extract the link from the third column (Publication)
                 if "href='" in row[2]:
                     excel_link = row[2].split("href='")[1].split("'")[0]
                 else:
@@ -272,7 +272,7 @@ def rasff_page():
                     # Load Excel data
                     df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                    st.subheader(f"Données RASFF pour {row[3]}")
+                    st.subheader(f"Données RASFF pour {row[0]} ({row[3]})")  # Show fiche and date
 
                     # Display the data in a table
                     st.dataframe(df)
@@ -285,6 +285,7 @@ def rasff_page():
                 st.error(f"Erreur lors du chargement du fichier Excel: {e}")
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
+
 
 
 
