@@ -259,26 +259,24 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        # Generate the table with integrated buttons
         table_html = '<div class="table-container"><table>'
         table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
         table_html += '<tbody>'
         
         for i, row in filtered_data:
-            # Create a button and directly trigger the summary generation and display
-            action_button = st.button(f"Analyser", key=f"analyze_{i}")
+            with st.form(key=f"form_{i}"):
+                action_button = st.form_submit_button(f"Analyser")
 
-            table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td></td></tr>'
-            
-            # Display the summary if the button is clicked
-            if action_button:
-                with st.spinner(f'Generating summary for {row[4]}...'):
-                    lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
-                    try:
-                        resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
-                        st.expander(f"Summary for {row[4]}").write(resume)
-                    except Exception as e:
-                        st.error(f"Erreur lors de l'analyse : {e}")
+                table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td></td></tr>'
+                
+                if action_button:
+                    with st.spinner(f'Generating summary for {row[4]}...'):
+                        lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
+                        try:
+                            resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
+                            st.expander(f"Summary for {row[4]}").write(resume)
+                        except Exception as e:
+                            st.error(f"Erreur lors de l'analyse : {e}")
         
         table_html += '</tbody></table></div>'
         st.markdown(table_html, unsafe_allow_html=True)
@@ -348,4 +346,3 @@ if st.button("Editer"):
 # Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
-
