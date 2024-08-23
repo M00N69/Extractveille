@@ -246,38 +246,21 @@ def rasff_page():
 
     if data:
         # Extract RASFF Excel files
-        rasff_articles = [row for row in data if 'RASFF' in row[0]]  # Filter for RASFF articles
-        if not rasff_articles:
-            st.warning("Aucun article RASFF trouvé dans les données extraites.")
-            return
-        
+        rasff_articles = [row for row in data if 'Alertes' in row[2]]
         for row in rasff_articles:
-            excel_link = None
             try:
-                # Attempt to extract the link from the third column (Publication)
-                if "href='" in row[2]:
-                    excel_link = row[2].split("href='")[1].split("'")[0]
-                else:
-                    raise ValueError(f"Le lien n'a pas été trouvé pour l'article : {row[0]}")
+                excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
 
-            except (IndexError, ValueError) as e:
-                st.error(f"Erreur lors de l'extraction du lien Excel pour l'article : {row[0]} - {e}")
-                continue
+                excel_file = requests.get(excel_link)
+                excel_file.raise_for_status()
 
-            try:
-                if excel_link:
-                    excel_file = requests.get(excel_link)
-                    excel_file.raise_for_status()
+                # Load Excel data
+                df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                    # Load Excel data
-                    df = pd.read_excel(excel_file.content, engine='openpyxl')
+                st.subheader(f"Données RASFF pour {row[3]}")
 
-                    st.subheader(f"Données RASFF pour {row[0]} ({row[3]})")  # Show fiche and date
-
-                    # Display the data in a table
-                    st.dataframe(df)
-                else:
-                    st.error(f"Aucun lien Excel valide pour l'article : {row[0]}")
+                # Display the data in a table
+                st.dataframe(df)
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
