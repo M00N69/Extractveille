@@ -53,7 +53,7 @@ css_background = f"""
     color: #F0F0F0;  /* Texte clair */
 }}
 .stSidebar {{
-    background-color: #006d77 !important;  /* Bleu-vert */
+    background-color: #037283 !important;  /* Bleu-vert */
     color: #EDF6F9;  /* Texte clair */
 }}
 .stSidebar .sidebar-content {{
