@@ -6,6 +6,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
 from datetime import datetime
+from st_aggrid import AgGrid, GridOptionsBuilder  # Ensure this import is correct
 
 # Ensure NLTK dependencies are downloaded
 nltk.download('stopwords')
