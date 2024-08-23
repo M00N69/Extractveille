@@ -16,6 +16,11 @@ nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
 
+# Fixer les dates par défaut
+current_year = datetime.now().year
+default_start_date = datetime(current_year, 1, 1)
+default_end_date = datetime.now()
+
 def extraire_texte_et_liens(url):
     response = requests.get(url)
     response.raise_for_status()
@@ -49,7 +54,7 @@ css_background = f"""
     color: #F0F0F0;  /* Texte clair */
 }}
 .stSidebar {{
-    background-color: #006d77;  /* Bleu-vert */
+    background-color: #006d77 !important;  /* Bleu-vert */
     color: #EDF6F9;  /* Texte clair */
 }}
 .stSidebar .sidebar-content {{
@@ -58,6 +63,13 @@ css_background = f"""
 .stSidebar input, .stSidebar selectbox, .stSidebar button {{
     color: #EDF6F9;  /* Texte clair */
     background-color: #83c5be;  /* Boutons et inputs en bleu-vert clair */
+}}
+button, .stButton > button {{
+    color: #fff !important; /* Texte blanc */
+    background-color: #3080F8 !important; /* Fond bleu */
+}}
+button:hover, .stButton > button:hover {{
+    background-color: #1A5BB1 !important; /* Fond bleu plus foncé */
 }}
 .table-container {{
     display: flex;
@@ -134,9 +146,9 @@ with st.sidebar.expander("INTRODUCTION"):
 # Filtre par mots-clés
 mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
 
-# Filtre par date
-date_debut = st.sidebar.date_input("Date de début:", datetime.now())
-date_fin = st.sidebar.date_input("Date de fin:", datetime.now())
+# Filtre par date avec valeurs par défaut
+date_debut = st.sidebar.date_input("Date de début:", default_start_date)
+date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
 
 # Filtre par rubrique
 rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"])
@@ -260,6 +272,7 @@ def afficher_tableau(data):
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
+    
     # Générer des résumés avec Gemini
     if st.session_state.selected_row is not None:
         row_index, row = filtered_data[st.session_state.selected_row]
@@ -272,6 +285,23 @@ def afficher_tableau(data):
             except Exception as e:
                 st.error(f"Erreur lors de l'analyse : {e}")
         st.write("---")
+    
+    # Extraire les fichiers Excel RASFF
+    rasff_articles = [row for row in data if 'Alertes' in row[2]]
+    for row in rasff_articles:
+        excel_link = row[2].split("href='")[1].split("'")[0]  # Extraire le lien Excel
+        try:
+            excel_file = requests.get(excel_link)
+            excel_file.raise_for_status()
+
+            # Charger les données Excel
+            df = pd.read_excel(excel_file.content, engine='openpyxl')
+
+            st.subheader(f"Données RASFF pour {row[3]}")
+            st.dataframe(df, use_container_width=True)
+
+        except requests.exceptions.RequestException as e:
+            st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
 
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
@@ -290,15 +320,19 @@ def rasff_page():
     semaine_min = st.sidebar.slider("Semaine de début:", 1, 52, 1)
     semaine_max = st.sidebar.slider("Semaine de fin:", 1, 52, 52)
 
-    # Charger les données RASFF à partir du fichier Excel
-    # (Supposons que vous avez déjà téléchargé le fichier Excel RASFF ici)
+    # Vérifier si le fichier existe avant de le charger
+    file_path = 'path_to_rasff_file.xlsx'  # Remplacez par le chemin du fichier réel
 
-    df = pd.read_excel('path_to_rasff_file.xlsx', engine='openpyxl')  # Remplacez par le chemin du fichier réel
+    try:
+        df = pd.read_excel(file_path, engine='openpyxl')
 
-    # Filtrer les données par semaine
-    df_filtered = df[(df['Semaine'] >= semaine_min) & (df['Semaine'] <= semaine_max)]
+        # Filtrer les données par semaine
+        df_filtered = df[(df['Semaine'] >= semaine_min) & (df['Semaine'] <= semaine_max)]
 
-    st.dataframe(df_filtered, use_container_width=True)
+        st.dataframe(df_filtered, use_container_width=True)
+    except FileNotFoundError:
+        st.error(f"Le fichier {file_path} est introuvable. Veuillez vérifier le chemin du fichier.")
 
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
+
