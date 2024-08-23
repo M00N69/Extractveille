@@ -7,13 +7,14 @@ from nltk.stem import WordNetLemmatizer
 import pandas as pd
 from datetime import datetime
 
-# Configure Streamlit to use "wide" mode
-st.set_page_config(layout="wide")
-
 # Ensure NLTK dependencies are downloaded
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
+
+# Configure Streamlit to use "wide" mode
+st.set_page_config(layout="wide")
+
 
 # URL of the GIF for the background
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
@@ -141,6 +142,38 @@ if st.sidebar.button("Réinitialiser les filtres"):
 if 'selected_row' not in st.session_state:
     st.session_state.selected_row = None
 
+# Function to extract text and links from the website
+def extraire_texte_et_liens(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    table = soup.find('table')
+    if not table:
+        return None
+
+    rows = table.find_all('tr')
+    data = []
+
+    for row in rows:
+        cols = row.find_all('td')
+        if len(cols) < 7:  # Ensure that there are at least 7 columns to process
+            continue
+
+        fiche = cols[0].text.strip()
+        resume_link = cols[1].find('a').get('href') if cols[1].find('a') else ''
+        resume = f"<a href='{resume_link}'>Résumé</a>"
+        publication = cols[2].text.strip()
+        date_publication = cols[3].text.strip()
+        titre = cols[4].text.strip()
+        rubrique_profil = cols[5].text.strip()
+
+        # Append the extracted data as a list
+        row_data = [fiche, resume, publication, date_publication, titre, rubrique_profil]
+        data.append(row_data)
+
+    return data
+
 # Function to calculate the relevance of articles
 def calculer_pertinence(texte_article, mots_cles):
     stop_words = set(stopwords.words('french'))
@@ -258,4 +291,3 @@ if st.button("Editer"):
 # Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
-
