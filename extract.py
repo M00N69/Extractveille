@@ -237,16 +237,11 @@ def afficher_tableau(data):
         st.warning("Aucun résultat ne correspond aux filtres.")
 
 # Separate page for RASFF data
+# Updated RASFF page function
 def rasff_page():
     st.title("Données RASFF")
 
-    # Filter by specific weeks
-    selected_weeks = st.sidebar.multiselect(
-        "Sélectionnez les semaines:",
-        options=list(range(1, 53)),  # Assuming weeks are from 1 to 52
-        default=[1, 52]  # Default to show all weeks
-    )
-
+    # URL where the RASFF data is located
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
 
@@ -254,7 +249,12 @@ def rasff_page():
         # Extract RASFF Excel files
         rasff_articles = [row for row in data if 'Alertes' in row[2]]
         for row in rasff_articles:
-            excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
+            try:
+                excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
+            except IndexError:
+                st.error(f"Erreur lors de l'extraction du lien Excel pour l'article : {row[0]}")
+                continue
+
             try:
                 excel_file = requests.get(excel_link)
                 excel_file.raise_for_status()
@@ -262,21 +262,18 @@ def rasff_page():
                 # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                # Filter data by selected weeks
-                if 'Semaine' in df.columns:
-                    df_filtered = df[df['Semaine'].isin(selected_weeks)]
-                else:
-                    df_filtered = df  # If no week column, display all data
-
                 st.subheader(f"Données RASFF pour {row[3]}")
 
-                # Display interactive table
-                st.dataframe(df_filtered)
+                # Display the data in a table
+                st.dataframe(df)
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
+            except Exception as e:
+                st.error(f"Erreur lors du chargement du fichier Excel: {e}")
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
+
 
 # Main page button to display extracted data
 if st.button("Editer"):
