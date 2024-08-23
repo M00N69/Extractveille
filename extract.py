@@ -38,7 +38,7 @@ def extraire_texte_et_liens(url):
         return None
 
 # URL du GIF
-gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTl6aXY3dXp3djdjYzVyNGMyYWpnN3g3bnZ0NXo1emJ4aDdmdmY3YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/a3IGFA4BKrE40/giphy.gif"
+gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHl3YXBlazBzeXd6MGM0b2ZrZ3JjMGx6bG9uMDYyempzMXo5MmEzcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/TxVVB6PfWMjE4/giphy.gif"
 
 # Définir le CSS pour l'arrière-plan
 css_background = f"""
