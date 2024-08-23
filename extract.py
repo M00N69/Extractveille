@@ -23,20 +23,31 @@ def extraire_texte_et_liens(url):
     soup = BeautifulSoup(response.content, 'html.parser')
 
     table = soup.find('table')
-    if table:
-        rows = table.find_all('tr')
-        data = []
-        for row in rows:
-            cols = row.find_all('td')
-            if len(cols) >= 7:
-                row_data = [col.text.strip() for col in cols]
-                for i, col in enumerate(cols):
-                    if col.find('a'):
-                        row_data[i] = f"<a href='{col.find('a')['href']}'>{col.text.strip()}</a>"
-                data.append(row_data)
-        return data
-    else:
+    if not table:
         return None
+
+    rows = table.find_all('tr')
+    data = []
+
+    for row in rows:
+        cols = row.find_all('td')
+        if len(cols) < 7:
+            continue  # Skip rows that do not have enough columns
+        
+        row_data = []
+        for col in cols:
+            text = col.text.strip()
+            link = col.find('a')
+            if link:
+                href = link.get('href')
+                if href:
+                    text = f"<a href='{href}'>{text}</a>"
+            row_data.append(text)
+
+        if len(row_data) >= 7:  # Ensure the row has the required columns
+            data.append(row_data)
+
+    return data
 
 # URL du GIF pour l'arrière-plan
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
@@ -227,7 +238,9 @@ def generer_resume(texte, lien_resume):
     # Define the system instructions
     system_instruction = f"""
     Utilisez le texte du lien "Résumé" disponible dans le tableau pour générer un résumé concis et pertinent de l'article.
-    Le lien "Résumé" est : {lien_resume} 
+    Le lien "Résumé" est : {lien_resume}Voici la suite et la fin du code, accompagnée d'explications détaillées.
+
+```python
     """
 
     model = genai.GenerativeModel(
@@ -264,8 +277,8 @@ def afficher_tableau(data):
 
         for i, row in enumerate(filtered_data):
             with st.container():
-                if len(row) < 4:
-                    st.error("Données manquantes pour cette ligne.")
+                if len(row) < 7:
+                    st.error(f"Données manquantes pour cette ligne : {row}")
                     continue
 
                 cols = st.columns([3, 7, 2])
@@ -361,5 +374,6 @@ if st.button("Editer"):
 # Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
+
 
 
