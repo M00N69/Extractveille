@@ -78,8 +78,8 @@ button:hover, .stButton > button:hover {{
 }}
 table {{
     border-collapse: collapse;
-    width: 80%;
-    max-width: 1200px;
+    width: 100%;  /* S'assurer que le tableau utilise toute la largeur disponible */
+    max-width: 100%;
     border: 1px solid #ddd;
     background-color: #29292F; /* Fond sombre */
 }}
@@ -89,6 +89,8 @@ th, td {{
     text-align: left;
     padding: 8px;
     color: #F0F0F0;  /* Texte clair */
+    word-wrap: break-word;  /* Permettre les retours à la ligne dans les cellules */
+    white-space: normal;  /* Permettre les retours à la ligne */
 }}
 
 tr:nth-child(even) {{
@@ -335,4 +337,3 @@ def rasff_page():
 
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
-
