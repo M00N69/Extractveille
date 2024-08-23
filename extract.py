@@ -269,15 +269,18 @@ def afficher_tableau(data):
         filtered_table_html += '<tbody>'
         
         for i, row in filtered_data:
-            # Create a button that triggers a POST request to select the row for analysis
-            action_button = f'<form action="" method="post"><button name="selected_row" value="{i}" class="analyze-button" type="submit">Analyser</button></form>'
-            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
+            # Use st.button with a unique key to avoid re-rendering issues
+            if st.button(f"Analyser", key=f"analyze_{i}"):
+                st.session_state.selected_row = i
+                st.session_state.modal_open = True
+
+            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td></td></tr>'
         
         filtered_table_html += '</tbody></table></div>'
         st.markdown(filtered_table_html, unsafe_allow_html=True)
 
         # Check if a row was selected for analysis
-        if 'selected_row' in st.session_state and st.session_state.modal_open:
+        if st.session_state.modal_open and st.session_state.selected_row is not None:
             row_index = int(st.session_state.selected_row)
             selected_row = filtered_data[row_index][1]  # The selected row's data
 
