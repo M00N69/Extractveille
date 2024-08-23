@@ -247,7 +247,7 @@ def rasff_page():
         # Extract RASFF Excel files
         rasff_articles = [row for row in data if 'Alertes' in row[2]]
         for row in rasff_articles:
-            if 'href=' in row[2]:
+            if 'href=' in row[2]:  # Check if 'href' exists in the string
                 excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
                 try:
                     excel_file = requests.get(excel_link)
@@ -265,7 +265,7 @@ def rasff_page():
                     gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
                     gridOptions = gb.build()
 
-                    # Display interactive table
+                    # Display interactive table using AgGrid
                     AgGrid(df, gridOptions=gridOptions, enable_enterprise_modules=True)
 
                 except requests.exceptions.RequestException as e:
@@ -274,7 +274,6 @@ def rasff_page():
                 st.warning(f"Le lien Excel n'a pas pu être extrait pour l'article: {row[3]}")
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
-
 
 # Main page button to display extracted data
 if st.button("Editer"):
