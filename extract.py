@@ -318,10 +318,10 @@ selected_weeks = st.sidebar.multiselect(
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
              # Filter data by selected weeks
-if 'Semaine' in df.columns:
-    df_filtered = df[df['Semaine'].isin(selected_weeks)]
-else:
-    df_filtered = df  # If no week column, display all data
+    if 'Semaine' in df.columns:
+        df_filtered = df[df['Semaine'].isin(selected_weeks)]
+    else:
+        df_filtered = df  # If no week column, display all data
 
 
                 st.subheader(f"Données RASFF pour {row[3]}")
