@@ -251,10 +251,11 @@ def extraire_texte_et_liens(url):
         if len(columns) > 0:
             fiche = columns[0].text.strip()
             publication = columns[1].text.strip()
+            date_info = columns[3].text.strip() if len(columns) > 3 else "Date inconnue"
             link_element = row.find('a', href=True)
             if link_element and 'Alertes' in link_element.text:
                 excel_link = link_element['href']
-                data.append((fiche, publication, excel_link))
+                data.append((fiche, publication, date_info, excel_link))
     
     return data
 
@@ -266,7 +267,8 @@ def rasff_page():
 
     if data:
         for row in data:
-            excel_link = row[2]
+            excel_link = row[3]  # The link is the fourth element in the row
+            date_info = row[2]   # The date/week information is the third element in the row
             try:
                 excel_file = requests.get(excel_link)
                 excel_file.raise_for_status()
@@ -274,7 +276,8 @@ def rasff_page():
                 # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                st.subheader(f"Données RASFF pour {row[2]}")
+                # Set subheader with the week information from the "Date" column
+                st.subheader(f"Données RASFF pour la semaine du {date_info}")
 
                 # Configure AgGrid
                 gb = GridOptionsBuilder.from_dataframe(df)
