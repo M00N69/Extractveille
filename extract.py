@@ -8,6 +8,9 @@ import pandas as pd
 import google.generativeai as genai
 from datetime import datetime
 
+# Configure Streamlit to use "wide" mode
+st.set_page_config(layout="wide")
+
 # Ensure NLTK dependencies are downloaded
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -30,7 +33,6 @@ def extraire_texte_et_liens(url):
                     if col.find('a'):
                         row_data[i] = f"<a href='{col.find('a')['href']}'>{col.text.strip()}</a>"
                 data.append(row_data)
-
         return data
     else:
         return None
@@ -66,7 +68,6 @@ with st.sidebar.expander("INTRODUCTION"):
     - **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
     - **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
     - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
-    - **Afficher le tableau principal**: Cochez pour afficher ou masquer le tableau principal.
     """)
 
 # Filtre par mots-clés
@@ -166,79 +167,6 @@ if st.button("Editer"):
     data = extraire_texte_et_liens(url)
 
     if data:
-        st.subheader("Tableau Complet de la veille :")
-        show_main_table = st.sidebar.checkbox("Afficher le tableau complet", value=True)
-
-        if show_main_table:
-            # Définir les styles CSS pour le tableau
-            st.markdown(
-                """
-                <style>
-                .table-container {
-                    display: flex;
-                    justify-content: center;
-                    width: 100%;
-                }
-                table {
-                    border-collapse: collapse;
-                    width: 80%;
-                    max-width: 1200px;
-                    border: 1px solid #ddd;
-                    background-color: #29292F; /* Fond sombre */
-                }
-
-                th, td {
-                    border: 1px solid #ddd;
-                    text-align: left;
-                    padding: 8px;
-                    color: #fff; /* Texte blanc */
-                }
-
-                tr:nth-child(even) {
-                    background-color: #333; /* Ligne paire plus foncée */
-                }
-
-                th {
-                    background-color: #333; /* En-têtes plus foncés */
-                    font-weight: bold;
-                }
-
-                a {
-                    color: #3080F8; /* Bleu clair pour les liens */
-                    text-decoration: none; /* Supprimer le soulignement par défaut */
-                }
-
-                a:hover {
-                    text-decoration: underline; /* Soulignement au survol */
-                }
-
-                .analyze-button {
-                    padding: 4px 8px;
-                    color: #fff;
-                    background-color: #3080F8;
-                    border: none;
-                    cursor: pointer;
-                }
-
-                .analyze-button:hover {
-                    background-color: #1A5BB1;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-
-            # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
-            table_html = '<div class="table-container"><table>'
-            table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
-            table_html += '<tbody>'
-            
-            for i, row in enumerate(data[1:]):
-                table_html += '<tr><td>' + '</td><td>'.join(row) + f'</td><td><button class="analyze-button" onclick="select_row_for_analysis({i})">Analyser</button></td></tr>'
-            
-            table_html += '</tbody></table></div>'
-            st.markdown(table_html, unsafe_allow_html=True)
-
         # Filtrer le tableau par mots-clés, date et rubrique
         filtered_data = []
         for i, row in enumerate(data[1:]):  # Ignorer l'en-tête
@@ -261,63 +189,7 @@ if st.button("Editer"):
         if filtered_data:
             st.subheader("Résultats filtrés:")
 
-            st.markdown(
-                """
-                <style>
-                .table-container {
-                    display: flex;
-                    justify-content: center;
-                    width: 100%;
-                }
-                table {
-                    border-collapse: collapse;
-                    width: 80%;
-                    max-width: 1200px;
-                    border: 1px solid #ddd;
-                    background-color: #29292F; /* Fond sombre */
-                }
-
-                th, td {
-                    border: 1px solid #ddd;
-                    text-align: left;
-                    padding: 8px;
-                    color: #fff; /* Texte blanc */
-                }
-
-                tr:nth-child(even) {
-                    background-color: #333; /* Ligne paire plus foncée */
-                }
-
-                th {
-                    background-color: #333; /* En-têtes plus foncés */
-                    font-weight: bold;
-                }
-
-                a {
-                    color: #3080F8; /* Bleu clair pour les liens */
-                    text-decoration: none; /* Supprimer le soulignement par défaut */
-                }
-
-                a:hover {
-                    text-decoration: underline; /* Soulignement au survol */
-                }
-
-                .analyze-button {
-                    padding: 4px 8px;
-                    color: #fff;
-                    background-color: #3080F8;
-                    border: none;
-                    cursor: pointer;
-                }
-
-                .analyze-button:hover {
-                    background-color: #1A5BB1;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-
+            # Utiliser la fonction st.markdown() pour afficher le tableau en mode "wide"
             filtered_table_html = '<div class="table-container"><table>'
             filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
             filtered_table_html += '<tbody>'
@@ -330,7 +202,6 @@ if st.button("Editer"):
 
         else:
             st.warning("Aucun résultat ne correspond aux filtres.")
-
         # Générer des résumés avec Gemini
         if st.session_state.selected_row is not None:
             row_index, row = filtered_data[st.session_state.selected_row]
@@ -356,7 +227,7 @@ if st.button("Editer"):
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
                 st.subheader(f"Données RASFF pour {row[3]}")
-                st.dataframe(df)
+                st.dataframe(df, use_container_width=True)  # En mode wide
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
@@ -364,4 +235,23 @@ if st.button("Editer"):
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
+# Page séparée pour les données RASFF
+def rasff_page():
+    st.title("Données RASFF")
 
+    # Filtre par semaine
+    semaine_min = st.sidebar.slider("Semaine de début:", 1, 52, 1)
+    semaine_max = st.sidebar.slider("Semaine de fin:", 1, 52, 52)
+
+    # Charger les données RASFF à partir du fichier Excel
+    # (Supposons que vous avez déjà téléchargé le fichier Excel RASFF ici)
+
+    df = pd.read_excel('path_to_rasff_file.xlsx', engine='openpyxl')  # Remplacez par le chemin du fichier réel
+
+    # Filtrer les données par semaine
+    df_filtered = df[(df['Semaine'] >= semaine_min) & (df['Semaine'] <= semaine_max)]
+
+    st.dataframe(df_filtered, use_container_width=True)
+
+if st.sidebar.button("Afficher les données RASFF"):
+    rasff_page()
