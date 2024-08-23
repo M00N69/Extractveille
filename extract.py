@@ -5,7 +5,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
 
 # Configure Streamlit to use "wide" mode
@@ -123,6 +122,8 @@ a:hover {{
     border: none;
     cursor: pointer;
     text-align: center;
+    display: block;
+    width: 100%;
 }}
 
 .analyze-button:hover {{
@@ -264,22 +265,31 @@ def afficher_tableau(data):
         table_html += '<tbody>'
         
         for i, row in filtered_data:
-            with st.form(key=f"form_{i}"):
-                action_button = st.form_submit_button(f"Analyser")
+            # Embed the button directly within the HTML
+            button_html = f"""
+            <form action="#" method="post">
+                <input type="hidden" name="row_index" value="{i}">
+                <button class="analyze-button" type="submit">Analyser</button>
+            </form>
+            """
 
-                table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td></td></tr>'
-                
-                if action_button:
-                    with st.spinner(f'Generating summary for {row[4]}...'):
-                        lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
-                        try:
-                            resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
-                            st.expander(f"Summary for {row[4]}").write(resume)
-                        except Exception as e:
-                            st.error(f"Erreur lors de l'analyse : {e}")
+            table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{button_html}</td></tr>'
         
         table_html += '</tbody></table></div>'
         st.markdown(table_html, unsafe_allow_html=True)
+
+        # Handle button clicks
+        if "row_index" in st.session_state:
+            row_index = int(st.session_state["row_index"])
+            selected_row = filtered_data[row_index][1]
+            lien_resume = selected_row[1].split("href='")[1].split("'")[0]
+
+            with st.spinner(f'Generating summary for {selected_row[4]}...'):
+                try:
+                    resume = generer_resume(f"{selected_row[4]} {selected_row[5]}", lien_resume)
+                    st.expander(f"Summary for {selected_row[4]}").write(resume)
+                except Exception as e:
+                    st.error(f"Erreur lors de l'analyse : {e}")
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
@@ -346,3 +356,4 @@ if st.button("Editer"):
 # Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
+
