@@ -136,7 +136,6 @@ a:hover {{
 # Injecter le CSS dans l'application Streamlit
 st.markdown(css_background, unsafe_allow_html=True)
 
-
 # Page Streamlit
 st.title("VEILLE EN IAA")
 st.write("Extraction du tableau et des liens du bulletin de veille")
@@ -162,7 +161,12 @@ date_debut = st.sidebar.date_input("Date de début:", default_start_date)
 date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
 
 # Filtre par rubrique
-rubriques = st.sidebar.multiselect("Choisissez les rubriques:", ["Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"])
+rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
+    "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
+    "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
+    "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", 
+    "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"
+])
 
 # Button to clear all filters
 if st.sidebar.button("Réinitialiser les filtres"):
@@ -327,9 +331,13 @@ if st.button("Editer"):
 def rasff_page():
     st.title("Données RASFF")
 
-    # Filtre par semaine
-    semaine_min = st.sidebar.slider("Semaine de début:", 1, 52, 1)
-    semaine_max = st.sidebar.slider("Semaine de fin:", 1, 52, 52)
+    # Filtre par plage de semaines
+    semaine_debut, semaine_fin = st.sidebar.slider(
+        "Sélectionnez une plage de semaines:",
+        min_value=1,
+        max_value=52,
+        value=(1, 52)  # Valeurs par défaut
+    )
 
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
@@ -348,7 +356,7 @@ def rasff_page():
 
                 # Filtrer les données par semaine
                 if 'Semaine' in df.columns:
-                    df_filtered = df[(df['Semaine'] >= semaine_min) & (df['Semaine'] <= semaine_max)]
+                    df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
                 else:
                     df_filtered = df  # Si pas de colonne semaine, afficher tout
 
