@@ -5,7 +5,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
-import google.generativeai as genai
 from datetime import datetime
 
 # Configure Streamlit to use "wide" mode
@@ -322,18 +321,34 @@ def rasff_page():
     semaine_min = st.sidebar.slider("Semaine de début:", 1, 52, 1)
     semaine_max = st.sidebar.slider("Semaine de fin:", 1, 52, 52)
 
-    # Vérifier si le fichier existe avant de le charger
-    file_path = 'path_to_rasff_file.xlsx'  # Remplacez par le chemin du fichier réel
+    url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
+    data = extraire_texte_et_liens(url)
 
-    try:
-        df = pd.read_excel(file_path, engine='openpyxl')
+    if data:
+        # Extraire les fichiers Excel RASFF
+        rasff_articles = [row for row in data if 'Alertes' in row[2]]
+        for row in rasff_articles:
+            excel_link = row[2].split("href='")[1].split("'")[0]  # Extraire le lien Excel
+            try:
+                excel_file = requests.get(excel_link)
+                excel_file.raise_for_status()
 
-        # Filtrer les données par semaine
-        df_filtered = df[(df['Semaine'] >= semaine_min) & (df['Semaine'] <= semaine_max)]
+                # Charger les données Excel
+                df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-        st.dataframe(df_filtered, use_container_width=True)
-    except FileNotFoundError:
-        st.error(f"Le fichier {file_path} est introuvable. Veuillez vérifier le chemin du fichier.")
+                # Filtrer les données par semaine
+                if 'Semaine' in df.columns:
+                    df_filtered = df[(df['Semaine'] >= semaine_min) & (df['Semaine'] <= semaine_max)]
+                else:
+                    df_filtered = df  # Si pas de colonne semaine, afficher tout
+
+                st.subheader(f"Données RASFF pour {row[3]}")
+                st.dataframe(df_filtered, use_container_width=True)
+
+            except requests.exceptions.RequestException as e:
+                st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
+    else:
+        st.error("Impossible d'extraire le tableau du bulletin.")
 
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
