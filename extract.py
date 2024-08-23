@@ -38,179 +38,6 @@ def extraire_texte_et_liens(url):
     else:
         return None
 
-# URL du GIF pour l'arrière-plan
-gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
-
-# Define the CSS for background and colors
-css_background = f"""
-<style>
-.stApp {{
-    background: url("{gif_url}") no-repeat center center fixed;
-    background-size: cover;
-    color: #F0F0F0;  /* Light text */
-}}
-
-/* Apply background color to the entire sidebar */
-[data-testid="stSidebar"] > div:first-child {{
-    background-color: #037283 !important;  /* Blue-green */
-    color: #EDF6F9 !important;  /* Light text */
-}}
-
-/* Style the inputs, selections, and buttons in the sidebar */
-.stSidebar input, .stSidebar selectbox, .stSidebar button {{
-    color: #EDF6F9 !important;  /* Light text */
-    background-color: #83c5be !important;  /* Light blue-green for buttons and inputs */
-}}
-
-/* Style the global buttons */
-button, .stButton > button {{
-    color: #fff !important; /* White text */
-    background-color: #3080F8 !important; /* Blue background */
-}}
-
-button:hover, .stButton > button:hover {{
-    background-color: #1A5BB1 !important; /* Darker blue background */
-}}
-
-/* Container for the table */
-.table-container {{
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}}
-
-/* Styles for the table */
-table {{
-    border-collapse: collapse;
-    width: 100%;  /* Ensure the table takes up the full width */
-    max-width: 100%;
-    border: 1px solid #ddd;
-    background-color: #29292F; /* Dark background */
-}}
-
-th, td {{
-    border: 1px solid #ddd;
-    text-align: left;
-    padding: 8px;
-    color: #F0F0F0;  /* Light text */
-    word-wrap: break-word;  /* Allow line breaks within cells */
-    white-space: normal;  /* Allow line breaks */
-}}
-
-/* Adjust column widths */
-td:nth-child(1) {{ width: 10%; }}  /* Fiche */
-td:nth-child(2) {{ width: 8%; }}   /* Résumé */
-td:nth-child(3) {{ width: 8%; }}   /* Publication */
-td:nth-child(4) {{ width: 10%; }}  /* Date */
-td:nth-child(5) {{ width: 22%; }}  /* Titre */
-td:nth-child(6) {{ width: 25%; }}  /* Rubrique et profil */
-td:nth-child(7) {{ width: 7%; }}   /* Bull. */
-td:nth-child(8) {{ width: 10%; }}  /* Action */
-
-tr:nth-child(even) {{
-    background-color: #333; /* Darker background for even rows */
-}}
-
-th {{
-    background-color: #333; /* Darker background for headers */
-    font-weight: bold;
-}}
-
-a {{
-    color: #00d9d9; /* Light blue for links */
-    text-decoration: none; /* Remove default underline */
-}}
-
-a:hover {{
-    text-decoration: underline; /* Underline on hover */
-}}
-
-/* Style the analyze buttons */
-.analyze-button {{
-    padding: 4px 8px;
-    color: #fff;
-    background-color: #3080F8;
-    border: none;
-    cursor: pointer;
-}}
-
-.analyze-button:hover {{
-    background-color: #1A5BB1;
-}}
-</style>
-"""
-
-# Inject the CSS into the Streamlit app
-st.markdown(css_background, unsafe_allow_html=True)
-
-# Streamlit Page
-st.title("VEILLE EN IAA")
-st.write("Extraction du tableau et des liens du bulletin de veille")
-
-# Left sidebar for filters
-st.sidebar.title("Filtres")
-
-# Introduction with collapse/expand effect
-with st.sidebar.expander("INTRODUCTION"):
-    st.markdown("""
-    Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
-    - **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
-    - **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
-    - **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
-    - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
-    """)
-
-# Filter by keywords
-mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
-
-# Filter by date with default values
-current_year = datetime.now().year
-default_start_date = datetime(current_year, 1, 1)
-default_end_date = datetime.now()
-
-date_debut = st.sidebar.date_input("Date de début:", default_start_date)
-date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
-
-# Filter by category
-rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
-    "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
-    "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
-    "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", 
-    "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"
-])
-
-# Button to clear all filters
-if st.sidebar.button("Réinitialiser les filtres"):
-    st.experimental_rerun()
-
-# Initialize session state for selected row for analysis
-if 'selected_row' not in st.session_state:
-    st.session_state.selected_row = None
-
-# Function to calculate the relevance of articles
-def calculer_pertinence(texte_article, mots_cles):
-    stop_words = set(stopwords.words('french'))
-    lemmatizer = WordNetLemmatizer()
-    tokens_article = nltk.word_tokenize(texte_article)
-    tokens_article = [lemmatizer.lemmatize(token.lower()) for token in tokens_article if token.isalpha() and token.lower() not in stop_words]
-
-    tokens_mots_cles = nltk.word_tokenize(mots_cles)
-    tokens_mots_cles = [lemmatizer.lemmatize(token.lower()) for token in tokens_mots_cles if token.isalpha() and token.lower() not in stop_words]
-
-    texte_article = " ".join(tokens_article) 
-    mots_cles = " ".join(tokens_mots_cles)
-
-    mots_cles_set = set(mots_cles.split(",")) 
-
-    pertinence = 0
-    for mot_cle in mots_cles_set:
-        if mot_cle in texte_article.lower():
-            pertinence += 1
-
-    pertinence = pertinence / len(mots_cles_set) if mots_cles_set else 0
-
-    return pertinence
-
 # Function to generate summaries with Gemini
 def generer_resume(texte, lien_resume):
     gemini_api_key = st.secrets["GEMINI_API_KEY"]
@@ -251,6 +78,30 @@ def generer_resume(texte, lien_resume):
     response = model.generate_text(text=texte)
     return response.text
 
+# Function to calculate the relevance of articles
+def calculer_pertinence(texte_article, mots_cles):
+    stop_words = set(stopwords.words('french'))
+    lemmatizer = WordNetLemmatizer()
+    tokens_article = nltk.word_tokenize(texte_article)
+    tokens_article = [lemmatizer.lemmatize(token.lower()) for token in tokens_article if token.isalpha() and token.lower() not in stop_words]
+
+    tokens_mots_cles = nltk.word_tokenize(mots_cles)
+    tokens_mots_cles = [lemmatizer.lemmatize(token.lower()) for token in tokens_mots_cles if token.isalpha() and token.lower() not in stop_words]
+
+    texte_article = " ".join(tokens_article) 
+    mots_cles = " ".join(tokens_mots_cles)
+
+    mots_cles_set = set(mots_cles.split(",")) 
+
+    pertinence = 0
+    for mot_cle in mots_cles_set:
+        if mot_cle in texte_article.lower():
+            pertinence += 1
+
+    pertinence = pertinence / len(mots_cles_set) if mots_cles_set else 0
+
+    return pertinence
+
 # Function to display the main table with formatting and analyze button
 def afficher_tableau(data):
     # Filter the table by keywords, date, and category
@@ -272,44 +123,34 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        # Use st.markdown() to display the table in "wide" mode
-        filtered_table_html = '<div class="table-container"><table>'
-        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
-        filtered_table_html += '<tbody>'
-        
         for i, row in filtered_data:
-            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#analyze_{i}\'">Analyser</button>'
-            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
-        
-        filtered_table_html += '</tbody></table></div>'
-        st.markdown(filtered_table_html, unsafe_allow_html=True)
+            with st.container():
+                cols = st.columns([2, 6, 2, 2, 1])
+                cols[0].markdown(f"**{row[0]}**")  # Fiche
+                cols[1].markdown(f"**{row[4]}**")  # Titre
+                cols[2].markdown(f"**{row[3]}**")  # Date
+                cols[3].markdown(f"**{row[5]}**")  # Rubrique et profil
+                analyze_button = cols[4].button("Analyser", key=f"analyze_{i}")
+
+                if analyze_button:
+                    # Trigger summary generation
+                    lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
+                    summary = generer_resume(f"{row[4]} {row[5]}", lien_resume)
+                    st.expander(f"Résumé pour {row[4]}").write(summary)
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
-    
-    # Generate summaries with Gemini if a row is selected
-    if st.session_state.selected_row is not None:
-        row_index, row = filtered_data[st.session_state.selected_row]
-        st.subheader("Analyse de l'article sélectionné:")
-        lien_resume = row[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
-        with st.spinner('Analyse en cours...'):
-            try:
-                resume = generer_resume(f"{row[4]} {row[5]}", lien_resume)
-                st.markdown(f"**Résumé de {row[4]}:**\n {resume}")
-            except Exception as e:
-                st.error(f"Erreur lors de l'analyse : {e}")
-        st.write("---")
 
 # Separate page for RASFF data
 def rasff_page():
     st.title("Données RASFF")
 
-    # Filter by week range
-    semaine_debut, semaine_fin = st.sidebar.slider(
-        "Sélectionnez une plage de semaines:",
-        min_value=1,
-        max_value=52,
-        value=(1, 52)  # Default values
+    # Filter by week using multiselect
+    semaines_disponibles = list(range(1, 53))  # Example list of weeks, 1 to 52
+    semaines_selectionnees = st.sidebar.multiselect(
+        "Sélectionnez les semaines:",
+        options=semaines_disponibles,
+        default=semaines_disponibles  # Select all weeks by default
     )
 
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
@@ -327,9 +168,9 @@ def rasff_page():
                 # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                # Filter data by week
+                # Filter data by selected weeks
                 if 'Semaine' in df.columns:
-                    df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
+                    df_filtered = df[df['Semaine'].isin(semaines_selectionnees)]
                 else:
                     df_filtered = df  # If no week column, display all data
 
@@ -350,6 +191,29 @@ def rasff_page():
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
+# Sidebar filters and buttons
+st.sidebar.title("Filtres")
+
+mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
+
+# Filter by date with default values
+current_year = datetime.now().year
+default_start_date = datetime(current_year, 1, 1)
+default_end_date = datetime.now()
+
+date_debut = st.sidebar.date_input("Date de début:", default_start_date)
+date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
+
+rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
+    "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
+    "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
+    "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", 
+    "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"
+])
+
+if st.sidebar.button("Réinitialiser les filtres"):
+    st.experimental_rerun()
+
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
@@ -359,6 +223,5 @@ if st.button("Editer"):
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
-# Sidebar button to display RASFF data page
 if st.sidebar.button("Afficher les données RASFF"):
     rasff_page()
