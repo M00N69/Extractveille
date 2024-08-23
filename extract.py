@@ -237,6 +237,26 @@ def afficher_tableau(data):
         st.warning("Aucun résultat ne correspond aux filtres.")
 
 # Separate page for RASFF data
+def extraire_texte_et_liens(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    # Find all rows in the table
+    rows = soup.find_all('tr')
+    
+    data = []
+    for row in rows:
+        columns = row.find_all('td')
+        if len(columns) > 0:
+            fiche = columns[0].text.strip()
+            publication = columns[1].text.strip()
+            link_element = row.find('a', href=True)
+            if link_element and 'Alertes' in link_element.text:
+                excel_link = link_element['href']
+                data.append((fiche, publication, excel_link))
+    
+    return data
+
 def rasff_page():
     st.title("Données RASFF")
 
@@ -244,34 +264,29 @@ def rasff_page():
     data = extraire_texte_et_liens(url)
 
     if data:
-        # Extract RASFF Excel files
-        rasff_articles = [row for row in data if 'Alertes' in row[2]]
-        for row in rasff_articles:
-            if 'href=' in row[2]:  # Check if 'href' exists in the string
-                excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
-                try:
-                    excel_file = requests.get(excel_link)
-                    excel_file.raise_for_status()
+        for row in data:
+            excel_link = row[2]
+            try:
+                excel_file = requests.get(excel_link)
+                excel_file.raise_for_status()
 
-                    # Load Excel data
-                    df = pd.read_excel(excel_file.content, engine='openpyxl')
+                # Load Excel data
+                df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                    st.subheader(f"Données RASFF pour {row[3]}")
+                st.subheader(f"Données RASFF pour {row[1]}")
 
-                    # Configure AgGrid
-                    gb = GridOptionsBuilder.from_dataframe(df)
-                    gb.configure_pagination(paginationAutoPageSize=True)
-                    gb.configure_side_bar()  # Add sidebar with filter options
-                    gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
-                    gridOptions = gb.build()
+                # Configure AgGrid
+                gb = GridOptionsBuilder.from_dataframe(df)
+                gb.configure_pagination(paginationAutoPageSize=True)
+                gb.configure_side_bar()  # Add sidebar with filter options
+                gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
+                gridOptions = gb.build()
 
-                    # Display interactive table using AgGrid
-                    AgGrid(df, gridOptions=gridOptions, enable_enterprise_modules=True)
+                # Display interactive table using AgGrid
+                AgGrid(df, gridOptions=gridOptions, enable_enterprise_modules=True)
 
-                except requests.exceptions.RequestException as e:
-                    st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
-            else:
-                st.warning(f"Le lien Excel n'a pas pu être extrait pour l'article: {row[3]}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
