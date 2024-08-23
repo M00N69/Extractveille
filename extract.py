@@ -5,16 +5,38 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
+from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
-import google.generativeai as genai
 
 # Configure Streamlit to use "wide" mode
 st.set_page_config(layout="wide")
 
 # Ensure NLTK dependencies are downloaded
-nltk.download('stopwords', quiet=True)
-nltk.download('punkt', quiet=True)
-nltk.download('wordnet', quiet=True)
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('wordnet')
+
+# Function to extract text and links from the website
+def extraire_texte_et_liens(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    table = soup.find('table')
+    if table:
+        rows = table.find_all('tr')
+        data = []
+        for row in rows:
+            cols = row.find_all('td')
+            if len(cols) >= 7:
+                row_data = [col.text.strip() for col in cols]
+                for i, col in enumerate(cols):
+                    if col.find('a'):
+                        row_data[i] = f"<a href='{col.find('a')['href']}'>{col.text.strip()}</a>"
+                data.append(row_data)
+        return data
+    else:
+        return None
 
 # URL du GIF pour l'arrière-plan
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
@@ -60,7 +82,7 @@ button:hover, .stButton > button:hover {{
 /* Styles for the table */
 table {{
     border-collapse: collapse;
-    width: 100%;
+    width: 100%;  /* Ensure the table takes up the full width */
     max-width: 100%;
     border: 1px solid #ddd;
     background-color: #29292F; /* Dark background */
@@ -92,33 +114,71 @@ a {{
 a:hover {{
     text-decoration: underline; /* Underline on hover */
 }}
+
+/* Style the analyze buttons */
+.analyze-button {{
+    padding: 4px 8px;
+    color: #fff;
+    background-color: #3080F8;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+}}
+
+.analyze-button:hover {{
+    background-color: #1A5BB1;
+}}
 </style>
 """
 
 # Inject the CSS into the Streamlit app
 st.markdown(css_background, unsafe_allow_html=True)
 
-# Function to extract text and links from the website
-def extraire_texte_et_liens(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.content, 'html.parser')
+# Streamlit Page
+st.title("VEILLE EN IAA")
+st.write("Extraction du tableau et des liens du bulletin de veille")
 
-    table = soup.find('table')
-    if table:
-        rows = table.find_all('tr')
-        data = []
-        for row in rows:
-            cols = row.find_all('td')
-            if len(cols) >= 7:
-                row_data = [col.text.strip() for col in cols]
-                for i, col in enumerate(cols):
-                    if col.find('a'):
-                        row_data[i] = f"<a href='{col.find('a')['href']}'>{col.text.strip()}</a>"
-                data.append(row_data)
-        return data
-    else:
-        return None
+# Left sidebar for filters
+st.sidebar.title("Filtres")
+
+# Introduction with collapse/expand effect
+with st.sidebar.expander("INTRODUCTION"):
+    st.markdown("""
+    Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
+    - **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
+    - **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
+    - **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
+    - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
+    """)
+
+# Filter by keywords
+mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
+
+# Filter by date with default values
+current_year = datetime.now().year
+default_start_date = datetime(current_year, 1, 1)
+default_end_date = datetime.now()
+
+date_debut = st.sidebar.date_input("Date de début:", default_start_date)
+date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
+
+# Filter by category
+rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
+    "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
+    "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
+    "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", 
+    "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"
+])
+
+# Button to clear all filters
+if st.sidebar.button("Réinitialiser les filtres"):
+    st.experimental_rerun()
+
+# Initialize session state for selected row for analysis
+if 'selected_row' not in st.session_state:
+    st.session_state.selected_row = None
+if 'show_summary' not in st.session_state:
+    st.session_state.show_summary = False
 
 # Function to calculate the relevance of articles
 def calculer_pertinence(texte_article, mots_cles):
@@ -205,39 +265,26 @@ def afficher_tableau(data):
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        # Create the HTML table
-        table_html = '<div class="table-container"><table>'
-        table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
-        table_html += '<tbody>'
+        # Display the table
+        filtered_table_html = '<div class="table-container"><table>'
+        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+        filtered_table_html += '<tbody>'
         
         for i, row in filtered_data:
-            table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td id="button_cell_{i}"></td></tr>'
+            with st.container():
+                cols = st.columns(len(row) + 1)  # Create columns
+                for j, cell in enumerate(row):
+                    cols[j].markdown(cell, unsafe_allow_html=True)
+                if cols[-1].button("Analyser", key=f"analyze_button_{i}"):
+                    st.session_state.selected_row = i
+                    st.session_state.show_summary = True
+                    st.experimental_rerun()
         
-        table_html += '</tbody></table></div>'
-
-        # Display the HTML table
-        st.markdown(table_html, unsafe_allow_html=True)
-
-        # Add Streamlit buttons for analysis
-        for i, row in filtered_data:
-            button_placeholder = st.empty()
-            if button_placeholder.button(f"Analyser", key=f"analyze_button_{i}"):
-                st.session_state.selected_row = i
-                st.session_state.show_summary = True
-                st.experimental_rerun()
-            
-            # Move the button to the correct table cell
-            st.markdown(f"""
-                <script>
-                    var button = document.querySelector('button[key="analyze_button_{i}"]');
-                    var cell = document.getElementById('button_cell_{i}');
-                    cell.appendChild(button);
-                </script>
-                """, unsafe_allow_html=True)
+        st.markdown(filtered_table_html, unsafe_allow_html=True)
 
         # Generate summaries with Gemini if a row is selected
         if st.session_state.show_summary and st.session_state.selected_row is not None:
-            selected_row_data = next(row for i, row in filtered_data if i == st.session_state.selected_row)
+            selected_row_data = filtered_data[st.session_state.selected_row][1]
             st.subheader(f"Analyse de l'article sélectionné: {selected_row_data[4]}")
             lien_resume = selected_row_data[1].split("href='")[1].split("'")[0]
             with st.spinner('Analyse en cours...'):
@@ -251,169 +298,7 @@ def afficher_tableau(data):
                 st.session_state.show_summary = False
                 st.experimental_rerun()
 
-# Streamlit Page
-st.title("VEILLE EN IAA")
-st.write("Extraction du tableau et des liens du bulletin de veille")
-
-# Left sidebar for filters
-st.sidebar.title("Filtres")
-
-# Introduction with collapse/expand effect
-with st.sidebar.expander("INTRODUCTION"):
-    st.markdown("""
-    Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
-    - **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
-    - **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
-    - **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
-    - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
-    """)
-
-# Filter by keywords
-mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
-
-# Filter by date with default values
-current_year = datetime.now().year
-default_start_date = datetime(current_year, 1, 1)
-default_end_date = datetime.now()
-
-date_debut = st.sidebar.date_input("Date de début:", default_start_date)
-date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
-
-# Filter by category
-rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
-    "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
-    "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
-    "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", 
-    "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"
-])
-
-# Button to clear all filters
-if st.sidebar.button("Réinitialiser les filtres"):
-    st.experimental_rerun()
-
-# Initialize session state for selected row for analysis
-if 'selected_row' not in st.session_state:
-    st.session_state.selected_row = None
-if 'show_summary' not in st.session_state:
-    st.session_state.show_summary = False
-
-# Main application flow
-if st.button("Editer"):
-    url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
-    data = extraire_texte_et_liens(url)
-
-    if data:
-        afficher_tableau(data)
-    else:
-        st.error("Impossible d'extraire le tableau du bulletin.")
-
 # Separate page for RASFF data
-def rasff_page():
-    st.title("Données RASFF")
-
-    # Filter by week range
-    semaine_debut, semaine_fin = st.sidebar.slider(
-        "Sélectionnez une plage de semaines:",
-        min_value=1,
-        max_value=52,
-        value=(1, 52)  # Default values
-    )
-
-    url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
-    data = extraire_texte_et_liens(url)
-
-    if data:
-        # Extract RASFF Excel files
-        rasff_articles = [row for row in data if 'Alertes' in row[2]]
-        for row in rasff_articles:
-            excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
-            try:
-                excel_file = requests.get(excel_link)
-                excel_file.raise_for_status()
-
-                # Load Excel data
-                df = pd.read_excel(excel_file.content, engine='openpyxl')
-
-                # Filter data by week
-                if 'Semaine' in df.columns:
-                    df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
-                else:
-                    df_filtered = df  # If no week column, display all data
-                    st.subheader(f"Données RASFF pour {row[3]}")
-
-                # Configure AgGrid
-                gb = GridOptionsBuilder.from_dataframe(df_filtered)
-                gb.configure_pagination(paginationAutoPageSize=True)
-                gb.configure_side_bar()  # Add sidebar with filter options
-                gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
-                gridOptions = gb.build()
-
-                # Display interactive table
-                AgGrid(df_filtered, gridOptions=gridOptions, enable_enterprise_modules=True)
-
-            except requests.exceptions.RequestException as e:
-                st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
-    else:
-        st.error("Impossible d'extraire le tableau du bulletin.")
-
-# Sidebar button to display RASFF data page
-if st.sidebar.button("Afficher les données RASFF"):
-    rasff_page()
-
-def main():
-    st.title("VEILLE EN IAA")
-    st.write("Extraction du tableau et des liens du bulletin de veille")
-
-    # Sidebar
-    st.sidebar.title("Filtres")
-
-    # Introduction with collapse/expand effect
-    with st.sidebar.expander("INTRODUCTION"):
-        st.markdown("""
-        Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
-        - **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
-        - **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
-        - **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
-        - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
-        """)
-
-    # Filter by keywords
-    mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
-
-    # Filter by date with default values
-    current_year = datetime.now().year
-    default_start_date = datetime(current_year, 1, 1)
-    default_end_date = datetime.now()
-
-    date_debut = st.sidebar.date_input("Date de début:", default_start_date)
-    date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
-
-    # Filter by category
-    rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
-        "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
-        "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
-        "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", 
-        "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"
-    ])
-
-    # Button to clear all filters
-    if st.sidebar.button("Réinitialiser les filtres"):
-        st.experimental_rerun()
-
-    # Main button to trigger data extraction and display
-    if st.button("Editer"):
-        url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
-        data = extraire_texte_et_liens(url)
-
-        if data:
-            afficher_tableau(data)
-        else:
-            st.error("Impossible d'extraire le tableau du bulletin.")
-
-    # Sidebar button to display RASFF data page
-    if st.sidebar.button("Afficher les données RASFF"):
-        rasff_page()
-
 def rasff_page():
     st.title("Données RASFF")
 
@@ -463,5 +348,16 @@ def rasff_page():
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
-if __name__ == "__main__":
-    main()
+# Main application flow
+if st.button("Editer"):
+    url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
+    data = extraire_texte_et_liens(url)
+
+    if data:
+        afficher_tableau(data)
+    else:
+        st.error("Impossible d'extraire le tableau du bulletin.")
+
+# Sidebar button to display RASFF data page
+if st.sidebar.button("Afficher les données RASFF"):
+    rasff_page()
