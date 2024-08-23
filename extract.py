@@ -255,7 +255,7 @@ def generer_resume(texte, lien_resume):
 def afficher_tableau(data):
     # Filter the table by keywords, date, and category
     filtered_data = []
-    for i, row in enumerate(data):  # We no longer ignore the header as it's custom
+    for i, row in enumerate(data):
         texte_article = f"{row[4]} {row[5]}"  # Concatenate Title and Category
         pertinence = calculer_pertinence(texte_article, mots_cles)
 
@@ -275,13 +275,20 @@ def afficher_tableau(data):
         for i, (index, row) in enumerate(filtered_data):
             with st.container():
                 cols = st.columns([1, 2, 1, 2, 3, 3])
+
                 # Display the extracted data
                 cols[0].markdown(f"**{row[0]}**")  # Fiche
-                cols[1].markdown(f"{row[1]}")      # Résumé (link)
+
+                # Create a clickable link for Résumé
+                lien_resume = row[1].split("href='")[1].split("'")[0]
+                resume_link = f"[Résumé]({lien_resume})"
+                cols[1].markdown(resume_link, unsafe_allow_html=True)  # Résumé (clickable link)
+
                 cols[2].markdown(f"**{row[2]}**")  # Publication
                 cols[3].markdown(f"**{row[3]}**")  # Date
                 cols[4].markdown(f"**{row[4]}**")  # Titre
                 cols[5].markdown(f"{row[5]}")      # Rubrique et profil
+
                 # Button for analysis
                 analyze_button = cols[0].button("Analyser", key=f"analyze_{i}")
                 
@@ -296,7 +303,7 @@ def afficher_tableau(data):
         if 'show_summary' in st.session_state and st.session_state.show_summary:
             st.subheader("Analyse de l'article sélectionné:")
             selected_row_data = st.session_state.selected_row_data
-            lien_resume = selected_row_data[1].split("href='")[1].split("'")[0]  # Extract "Résumé" link
+            lien_resume = selected_row_data[1].split("href='")[1].split("'")[0]
             with st.spinner('Analyse en cours...'):
                 try:
                     resume = generer_resume(f"{selected_row_data[4]} {selected_row_data[5]}", lien_resume)
@@ -308,6 +315,7 @@ def afficher_tableau(data):
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
+
 
 # Separate page for RASFF data
 def rasff_page():
