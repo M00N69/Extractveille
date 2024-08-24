@@ -151,6 +151,7 @@ def extraire_texte_et_liens(url):
 
     table = soup.find('table')
     if not table:
+        st.error("Table not found on the page.")
         return None
 
     rows = table.find_all('tr')
@@ -158,7 +159,9 @@ def extraire_texte_et_liens(url):
 
     for row in rows:
         cols = row.find_all('td')
+        logging.info(f"Raw row data: {[col.text.strip() for col in cols]}")  # Log raw row data
         if len(cols) < 7:  # Ensure that there are at least 7 columns to process
+            st.warning(f"La ligne {len(data) + 1} a un nombre insuffisant de colonnes.")
             continue
 
         fiche = cols[0].text.strip()
