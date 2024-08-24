@@ -203,6 +203,10 @@ def calculer_pertinence(texte_article, mots_cles):
 def afficher_tableau(data):
     filtered_data = []
     for i, row in enumerate(data):
+        if len(row) < 6:  # Ensure the row has at least 6 elements
+            st.warning(f"La ligne {i+1} a un nombre insuffisant de colonnes.")
+            continue
+        
         texte_article = f"{row[4]} {row[5]}"  # Concaténation du titre et de la rubrique
         pertinence = calculer_pertinence(texte_article, mots_cles)
 
@@ -221,10 +225,8 @@ def afficher_tableau(data):
 
         for i, (index, row) in enumerate(filtered_data):
             with st.container():
-                # Adjust column widths: 1, 2, 1, 1, 4, 4
                 cols = st.columns([1, 2, 1, 1, 4, 4])
 
-                # Display the extracted data
                 cols[0].markdown(f"**{row[0]}**")  # Fiche
                 lien_resume = row[1].split("href='")[1].split("'")[0]
                 resume_link = f"[Résumé]({lien_resume})"
@@ -236,7 +238,7 @@ def afficher_tableau(data):
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
-
+        
 # Separate page for RASFF data
 def extraire_texte_et_liens(url):
     response = requests.get(url)
