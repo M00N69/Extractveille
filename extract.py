@@ -4,9 +4,15 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
+import nltk
 
 # Configure Streamlit to use "wide" mode
 st.set_page_config(layout="wide")
+
+# Ensure NLTK dependencies are downloaded
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('wordnet')
 
 # CSS for the background and other custom styles
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
