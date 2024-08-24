@@ -188,7 +188,7 @@ def calculer_pertinence(texte_article, mots_cles):
 
     return pertinence
 
-# Function to display the main table with formatting and analyze button
+# Function to display the main table with formatting (without the analyze button)
 def afficher_tableau(data):
     filtered_data = []
     for i, row in enumerate(data[1:]):  # Ignore header
@@ -210,12 +210,11 @@ def afficher_tableau(data):
 
         # Display the table in "wide" mode
         filtered_table_html = '<div class="table-container"><table>'
-        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th></tr></thead>'
         filtered_table_html += '<tbody>'
         
         for i, row in filtered_data:
-            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#analyze_{i}\'">Analyser</button>'
-            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
+            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + '</td></tr>'
         
         filtered_table_html += '</tbody></table></div>'
         st.markdown(filtered_table_html, unsafe_allow_html=True)
@@ -223,17 +222,9 @@ def afficher_tableau(data):
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
 
-# Separate page for RASFF data
+# Separate page for RASFF data (without the week filter)
 def rasff_page():
     st.title("Données RASFF")
-
-    # Filter by week range
-    semaine_debut, semaine_fin = st.sidebar.slider(
-        "Sélectionnez une plage de semaines:",
-        min_value=1,
-        max_value=52,
-        value=(1, 52)  # Default values
-    )
 
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
@@ -249,23 +240,17 @@ def rasff_page():
                 # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                # Filter data by week
-                if 'Semaine' in df.columns:
-                    df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
-                else:
-                    df_filtered = df  # If no week column, display all data
-
                 st.subheader(f"Données RASFF pour {row[3]}")
 
                 # Configure AgGrid
-                gb = GridOptionsBuilder.from_dataframe(df_filtered)
+                gb = GridOptionsBuilder.from_dataframe(df)
                 gb.configure_pagination(paginationAutoPageSize=True)
                 gb.configure_side_bar()  # Add sidebar with filter options
                 gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
                 gridOptions = gb.build()
 
                 # Display interactive table
-                AgGrid(df_filtered, gridOptions=gridOptions, enable_enterprise_modules=True)
+                AgGrid(df, gridOptions=gridOptions, enable_enterprise_modules=True)
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
