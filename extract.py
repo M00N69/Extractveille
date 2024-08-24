@@ -5,17 +5,16 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
+from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
-from st_aggrid import AgGrid, GridOptionsBuilder  # Ensure this import is correct
+
+# Configure Streamlit to use "wide" mode
+st.set_page_config(layout="wide")
 
 # Ensure NLTK dependencies are downloaded
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
-
-# Configure Streamlit to use "wide" mode
-st.set_page_config(layout="wide")
-
 
 # URL of the GIF for the background
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
@@ -150,33 +149,20 @@ def extraire_texte_et_liens(url):
     soup = BeautifulSoup(response.content, 'html.parser')
 
     table = soup.find('table')
-    if not table:
-        st.error("Table not found on the page.")
+    if table:
+        rows = table.find_all('tr')
+        data = []
+        for row in rows:
+            cols = row.find_all('td')
+            if len(cols) >= 7:  # Adjusted to check for at least 7 columns
+                row_data = [col.text.strip() for col in cols]
+                for i, col in enumerate(cols):
+                    if col.find('a'):
+                        row_data[i] = f"<a href='{col.find('a')['href']}'>{col.text.strip()}</a>"
+                data.append(row_data)
+        return data
+    else:
         return None
-
-    rows = table.find_all('tr')
-    data = []
-
-    for row in rows:
-        cols = row.find_all('td')
-        logging.info(f"Raw row data: {[col.text.strip() for col in cols]}")  # Log raw row data
-        if len(cols) < 7:  # Ensure that there are at least 7 columns to process
-            st.warning(f"La ligne {len(data) + 1} a un nombre insuffisant de colonnes.")
-            continue
-
-        fiche = cols[0].text.strip()
-        resume_link = cols[1].find('a').get('href') if cols[1].find('a') else ''
-        resume = f"<a href='{resume_link}'>Résumé</a>"
-        publication = cols[2].text.strip()
-        date_publication = cols[3].text.strip()
-        titre = cols[4].text.strip()
-        rubrique_profil = cols[5].text.strip()
-
-        # Append the extracted data as a list
-        row_data = [fiche, resume, publication, date_publication, titre, rubrique_profil]
-        data.append(row_data)
-
-    return data
 
 # Function to calculate the relevance of articles
 def calculer_pertinence(texte_article, mots_cles):
@@ -202,78 +188,60 @@ def calculer_pertinence(texte_article, mots_cles):
 
     return pertinence
 
-# Function to display the main table with formatting
+# Function to display the main table with formatting and analyze button
 def afficher_tableau(data):
     filtered_data = []
-    for i, row in enumerate(data):
-        if len(row) < 6:  # Ensure the row has at least 6 elements
-            st.warning(f"La ligne {i+1} a un nombre insuffisant de colonnes.")
-            continue
-        
-        texte_article = f"{row[4]} {row[5]}"  # Concaténation du titre et de la rubrique
+    for i, row in enumerate(data[1:]):  # Ignore header
+        texte_article = f"{row[4]} {row[5]}"  # Concatenate Title and Category
         pertinence = calculer_pertinence(texte_article, mots_cles)
 
         try:
             date_publication = datetime.strptime(row[3], "%d/%m/%Y").date()
-        except (ValueError, IndexError):
+        except ValueError:
             continue
 
         if date_debut <= date_publication <= date_fin:
             if not rubriques or any(rubrique in row[5] for rubrique in rubriques):
-                if pertinence > 0.5:  # Seuil de pertinence
+                if pertinence > 0.5:  # Relevance threshold
                     filtered_data.append((i, row))
 
     if filtered_data:
         st.subheader("Résultats filtrés:")
 
-        for i, (index, row) in enumerate(filtered_data):
-            with st.container():
-                cols = st.columns([1, 2, 1, 1, 4, 4])
-
-                cols[0].markdown(f"**{row[0]}**")  # Fiche
-                lien_resume = row[1].split("href='")[1].split("'")[0]
-                resume_link = f"[Résumé]({lien_resume})"
-                cols[1].markdown(resume_link, unsafe_allow_html=True)
-                cols[2].markdown(f"**{row[2]}**")
-                cols[3].markdown(f"**{row[3]}**")
-                cols[4].markdown(f"**{row[4]}**")
-                cols[5].markdown(f"{row[5]}")
+        # Display the table in "wide" mode
+        filtered_table_html = '<div class="table-container"><table>'
+        filtered_table_html += '<thead><tr><th>' + '</th><th>'.join(data[0]) + '</th><th>Action</th></tr></thead>'
+        filtered_table_html += '<tbody>'
+        
+        for i, row in filtered_data:
+            action_button = f'<button class="analyze-button" onclick="window.location.href=\'#analyze_{i}\'">Analyser</button>'
+            filtered_table_html += f'<tr><td>' + '</td><td>'.join(row) + f'</td><td>{action_button}</td></tr>'
+        
+        filtered_table_html += '</tbody></table></div>'
+        st.markdown(filtered_table_html, unsafe_allow_html=True)
 
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
-        
-# Separate page for RASFF data
-def extraire_texte_et_liens(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    
-    # Find all rows in the table
-    rows = soup.find_all('tr')
-    
-    data = []
-    for row in rows:
-        columns = row.find_all('td')
-        if len(columns) > 0:
-            fiche = columns[0].text.strip()
-            publication = columns[1].text.strip()
-            date_info = columns[3].text.strip() if len(columns) > 3 else "Date inconnue"
-            link_element = row.find('a', href=True)
-            if link_element and 'Alertes' in link_element.text:
-                excel_link = link_element['href']
-                data.append((fiche, publication, date_info, excel_link))
-    
-    return data
 
+# Separate page for RASFF data
 def rasff_page():
     st.title("Données RASFF")
+
+    # Filter by week range
+    semaine_debut, semaine_fin = st.sidebar.slider(
+        "Sélectionnez une plage de semaines:",
+        min_value=1,
+        max_value=52,
+        value=(1, 52)  # Default values
+    )
 
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
 
     if data:
-        for row in data:
-            excel_link = row[3]  # The link is the fourth element in the row
-            date_info = row[2]   # The date/week information is the third element in the row
+        rasff_articles = [row for row in data if 'Alertes' in row[2]]
+        for row in rasff_articles:
+            excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
             try:
                 excel_file = requests.get(excel_link)
                 excel_file.raise_for_status()
@@ -281,25 +249,29 @@ def rasff_page():
                 # Load Excel data
                 df = pd.read_excel(excel_file.content, engine='openpyxl')
 
-                # Set subheader with the week information from the "Date" column
-                st.subheader(f"Données RASFF pour la semaine du {date_info}")
+                # Filter data by week
+                if 'Semaine' in df.columns:
+                    df_filtered = df[(df['Semaine'] >= semaine_debut) & (df['Semaine'] <= semaine_fin)]
+                else:
+                    df_filtered = df  # If no week column, display all data
+
+                st.subheader(f"Données RASFF pour {row[3]}")
 
                 # Configure AgGrid
-                gb = GridOptionsBuilder.from_dataframe(df)
+                gb = GridOptionsBuilder.from_dataframe(df_filtered)
                 gb.configure_pagination(paginationAutoPageSize=True)
                 gb.configure_side_bar()  # Add sidebar with filter options
                 gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
                 gridOptions = gb.build()
 
-                # Display interactive table using AgGrid
-                AgGrid(df, gridOptions=gridOptions, enable_enterprise_modules=True)
+                # Display interactive table
+                AgGrid(df_filtered, gridOptions=gridOptions, enable_enterprise_modules=True)
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
-# Main page button to display extracted data
 if st.button("Editer"):
     url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
     data = extraire_texte_et_liens(url)
