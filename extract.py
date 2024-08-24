@@ -1,9 +1,6 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
@@ -11,15 +8,9 @@ from datetime import datetime
 # Configure Streamlit to use "wide" mode
 st.set_page_config(layout="wide")
 
-# Ensure NLTK dependencies are downloaded
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('wordnet')
-
-# URL of the GIF for the background
+# CSS for the background and other custom styles
 gif_url = "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzl1djM4anJ3dGQxY3cwYmM2M2VyeDI4cDUyM3ozcmNvNzJjOWg3aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gJzajW8IiyJs3YY/giphy.gif"
 
-# Define the CSS for background and colors
 css_background = f"""
 <style>
 .stApp {{
@@ -102,45 +93,60 @@ st.markdown(css_background, unsafe_allow_html=True)
 st.title("VEILLE EN IAA")
 st.write("Extraction du tableau et des liens du bulletin de veille")
 
-# Left sidebar for filters
+# Sidebar for filters
 st.sidebar.title("Filtres")
 
-# Introduction with collapse/expand effect
-with st.sidebar.expander("INTRODUCTION"):
-    st.markdown("""
-    Utilisez les filtres ci-dessous pour affiner les résultats affichés dans le tableau principal.
-    - **Mots-clés**: Entrez des mots-clés séparés par des virgules pour rechercher dans les articles.
-    - **Dates**: Sélectionnez une plage de dates pour filtrer les articles publiés entre ces dates.
-    - **Rubriques**: Choisissez une ou plusieurs rubriques pour filtrer les articles en fonction de leur catégorie.
-    - **Réinitialiser les filtres**: Cliquez pour réinitialiser tous les filtres.
-    """)
+# Initialize or reset filters in session state
+if 'filters' not in st.session_state:
+    st.session_state.filters = {
+        'mots_cles': '',
+        'date_debut': datetime(datetime.now().year, 1, 1),
+        'date_fin': datetime.now(),
+        'rubriques': []
+    }
 
 # Filter by keywords
-mots_cles = st.sidebar.text_input("Entrez vos mots-clés (séparés par des virgules):")
+mots_cles = st.sidebar.text_input(
+    "Entrez vos mots-clés (séparés par des virgules):", 
+    value=st.session_state.filters['mots_cles']
+)
 
 # Filter by date with default values
-current_year = datetime.now().year
-default_start_date = datetime(current_year, 1, 1)
-default_end_date = datetime.now()
-
-date_debut = st.sidebar.date_input("Date de début:", default_start_date)
-date_fin = st.sidebar.date_input("Date de fin:", default_end_date)
+date_debut = st.sidebar.date_input(
+    "Date de début:", 
+    value=st.session_state.filters['date_debut']
+)
+date_fin = st.sidebar.date_input(
+    "Date de fin:", 
+    value=st.session_state.filters['date_fin']
+)
 
 # Filter by category
-rubriques = st.sidebar.multiselect("Choisissez les rubriques:", [
-    "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
-    "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
-    "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", 
-    "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"
-])
+rubriques = st.sidebar.multiselect(
+    "Choisissez les rubriques:", 
+    [
+        "Alertes alimentaires", "Contaminants", "Signes de qualité", "OGM", 
+        "Alimentation animale", "Produits de la pêche", "Produits phytopharmaceutiques", 
+        "Biocides", "Fertilisants", "Hygiène", "Vins", "Fruits, légumes et végétaux", 
+        "Animaux et viandes", "Substances nutritionnelles", "Nouveaux aliments"
+    ],
+    default=st.session_state.filters['rubriques']
+)
 
 # Button to clear all filters
 if st.sidebar.button("Réinitialiser les filtres"):
-    st.experimental_rerun()
+    st.session_state.filters = {
+        'mots_cles': '',
+        'date_debut': datetime(datetime.now().year, 1, 1),
+        'date_fin': datetime.now(),
+        'rubriques': []
+    }
 
-# Initialize session state for selected row for analysis
-if 'selected_row' not in st.session_state:
-    st.session_state.selected_row = None
+# Save filter values in session state
+st.session_state.filters['mots_cles'] = mots_cles
+st.session_state.filters['date_debut'] = date_debut
+st.session_state.filters['date_fin'] = date_fin
+st.session_state.filters['rubriques'] = rubriques
 
 # Function to extract text and links from the website
 def extraire_texte_et_liens(url):
@@ -166,8 +172,8 @@ def extraire_texte_et_liens(url):
 
 # Function to calculate the relevance of articles
 def calculer_pertinence(texte_article, mots_cles):
-    stop_words = set(stopwords.words('french'))
-    lemmatizer = WordNetLemmatizer()
+    stop_words = set(nltk.corpus.stopwords.words('french'))
+    lemmatizer = nltk.stem.WordNetLemmatizer()
     tokens_article = nltk.word_tokenize(texte_article)
     tokens_article = [lemmatizer.lemmatize(token.lower()) for token in tokens_article if token.isalpha() and token.lower() not in stop_words]
 
@@ -193,15 +199,15 @@ def afficher_tableau(data):
     filtered_data = []
     for i, row in enumerate(data[1:]):  # Ignore header
         texte_article = f"{row[4]} {row[5]}"  # Concatenate Title and Category
-        pertinence = calculer_pertinence(texte_article, mots_cles)
+        pertinence = calculer_pertinence(texte_article, st.session_state.filters['mots_cles'])
 
         try:
             date_publication = datetime.strptime(row[3], "%d/%m/%Y").date()
         except ValueError:
             continue
 
-        if date_debut <= date_publication <= date_fin:
-            if not rubriques or any(rubrique in row[5] for rubrique in rubriques):
+        if st.session_state.filters['date_debut'] <= date_publication <= st.session_state.filters['date_fin']:
+            if not st.session_state.filters['rubriques'] or any(rubrique in row[5] for rubrique in st.session_state.filters['rubriques']):
                 if pertinence > 0.5:  # Relevance threshold
                     filtered_data.append((i, row))
 
@@ -222,6 +228,15 @@ def afficher_tableau(data):
     else:
         st.warning("Aucun résultat ne correspond aux filtres.")
 
+# Main page button to display extracted data
+if st.button("Editer"):
+    url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
+    data = extraire_texte_et_liens(url)
+    if data:
+        afficher_tableau(data)
+    else:
+        st.error("Impossible d'extraire le tableau du bulletin.")
+
 # Separate page for RASFF data (without the week filter)
 def rasff_page():
     st.title("Données RASFF")
@@ -234,18 +249,16 @@ def rasff_page():
         for row in rasff_articles:
             excel_link = row[2].split("href='")[1].split("'")[0]  # Extract Excel link
             try:
-                excel_file = requests.get(excel_link)
-                excel_file.raise_for_status()
-
-                # Load Excel data
-                df = pd.read_excel(excel_file.content, engine='openpyxl')
+                response = requests.get(excel_link)
+                response.raise_for_status()
+                df = pd.read_excel(response.content, engine='openpyxl')
 
                 st.subheader(f"Données RASFF pour {row[3]}")
 
                 # Configure AgGrid
                 gb = GridOptionsBuilder.from_dataframe(df)
                 gb.configure_pagination(paginationAutoPageSize=True)
-                gb.configure_side_bar()  # Add sidebar with filter options
+                gb.configure_side_bar()
                 gb.configure_default_column(editable=True, groupable=True, sortable=True, filter=True)
                 gridOptions = gb.build()
 
@@ -254,15 +267,6 @@ def rasff_page():
 
             except requests.exceptions.RequestException as e:
                 st.error(f"Erreur lors du téléchargement du fichier Excel: {e}")
-    else:
-        st.error("Impossible d'extraire le tableau du bulletin.")
-
-if st.button("Editer"):
-    url = "https://www.alexia-iaa.fr/ac/AC000/somAC001.htm"
-    data = extraire_texte_et_liens(url)
-
-    if data:
-        afficher_tableau(data)
     else:
         st.error("Impossible d'extraire le tableau du bulletin.")
 
